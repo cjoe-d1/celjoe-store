@@ -1,7 +1,8 @@
 import { ReadonlyURLSearchParams } from "next/navigation";
+import { env } from "config/env";
 
-export const baseUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL
-  ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+export const baseUrl = env.vercel.productionUrl
+  ? `https://${env.vercel.productionUrl}`
   : "http://localhost:3000";
 
 export const createUrl = (

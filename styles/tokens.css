@@ -1,0 +1,89 @@
+@layer base {
+  :root {
+    --color-leaf-green: #7ea24a;
+    --color-deep-forest: #2e4a2b;
+    --color-warm-ivory: #f8f4ea;
+    --color-soft-linen: #f5f1e8;
+    --color-white: #ffffff;
+
+    --color-charcoal: #121212;
+    --color-smoke-merlot: #6b1f2a;
+    --color-ember: #c76a2b;
+    --color-burnished-gold: #b8904f;
+
+    --color-text-primary: #1f1f1f;
+    --color-text-secondary: #5c5c5c;
+    --color-border: #e6e1d8;
+
+    --ds-color-bg: var(--color-soft-linen);
+    --ds-color-fg: var(--color-text-primary);
+    --ds-color-muted: var(--color-text-secondary);
+    --ds-color-border: var(--color-border);
+    --ds-color-accent: var(--color-leaf-green);
+    --ds-color-surface: var(--color-warm-ivory);
+    --ds-color-surface-muted: color-mix(in oklab, var(--color-warm-ivory) 82%, var(--color-border));
+    --ds-color-focus-ring: color-mix(in oklab, var(--ds-color-accent) 45%, transparent);
+    --ds-color-danger: color-mix(in oklab, var(--color-smoke-merlot) 70%, #b00020);
+    --ds-color-success: var(--color-deep-forest);
+
+    --ds-font-sans: var(--font-montserrat);
+    --ds-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+      "Courier New", monospace;
+
+    --ds-font-weight-regular: 400;
+    --ds-font-weight-medium: 500;
+    --ds-font-weight-semibold: 600;
+    --ds-font-weight-bold: 700;
+
+    --ds-text-display: 2.75rem;
+    --ds-text-h1: 2.25rem;
+    --ds-text-h2: 1.875rem;
+    --ds-text-h3: 1.5rem;
+    --ds-text-h4: 1.25rem;
+    --ds-text-body: 1rem;
+    --ds-text-caption: 0.875rem;
+    --ds-text-label: 0.75rem;
+
+    --ds-leading-display: 1.05;
+    --ds-leading-heading: 1.15;
+    --ds-leading-body: 1.5;
+
+    --ds-radius-xs: 6px;
+    --ds-radius-sm: 8px;
+    --ds-radius-md: 12px;
+    --ds-radius-lg: 16px;
+    --ds-radius-xl: 20px;
+
+    --ds-space-0: 0px;
+    --ds-space-1: 4px;
+    --ds-space-2: 8px;
+    --ds-space-3: 12px;
+    --ds-space-4: 16px;
+    --ds-space-5: 20px;
+    --ds-space-6: 24px;
+    --ds-space-7: 28px;
+    --ds-space-8: 32px;
+    --ds-space-10: 40px;
+    --ds-space-12: 48px;
+    --ds-space-16: 64px;
+
+    --ds-shadow-sm: 0 1px 2px rgba(18, 18, 18, 0.06);
+    --ds-shadow-md: 0 10px 28px rgba(18, 18, 18, 0.10);
+    --ds-shadow-lg: 0 22px 60px rgba(18, 18, 18, 0.14);
+
+    --ds-duration-fast: 150ms;
+    --ds-duration-base: 250ms;
+    --ds-duration-slow: 400ms;
+    --ds-ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
+    --ds-ease-decelerate: cubic-bezier(0.2, 0.9, 0.2, 1);
+
+    --ds-z-drawer: 50;
+    --ds-z-modal: 60;
+    --ds-z-toast: 70;
+    --ds-z-header: 40;
+
+    --ds-container-max: 1536px;
+
+    --ds-size-control: 44px;
+  }
+}

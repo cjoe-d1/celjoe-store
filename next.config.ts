@@ -1,4 +1,7 @@
 export default {
+  turbopack: {
+    root: __dirname,
+  },
   experimental: {
     ppr: true,
     inlineCss: true,

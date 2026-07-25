@@ -1,77 +1,127 @@
 import Link from "next/link";
 
+import { Container, Label } from "components/chds";
+import { LogoIcon } from "components/icons";
 import FooterMenu from "components/layout/footer-menu";
-import LogoSquare from "components/logo-square";
 import { getCategories } from "lib/supabase/categories";
+import { getPublishedPageLinks } from "lib/supabase/pages";
 import { Suspense } from "react";
 
 const { COMPANY_NAME, SITE_NAME } = process.env;
 
 export default async function Footer() {
+  const exploreLinks = [
+    { label: "Home", href: "/" },
+    { label: "Kitchen", href: "/kitchen" },
+    { label: "BBQ", href: "/bbq" },
+    { label: "Catering", href: "/catering" },
+  ];
+
+  const supportLinks = [
+    { label: "Track Order", href: "/track-order" },
+    { label: "Account", href: "/account" },
+    { label: "Cart", href: "/cart" },
+  ];
+
   const currentYear = new Date().getFullYear();
   const copyrightDate = 2023 + (currentYear > 2023 ? `-${currentYear}` : "");
   const skeleton =
-    "w-full h-6 animate-pulse rounded-sm bg-neutral-200 dark:bg-neutral-700";
-  const categories = await getCategories({ parentId: null });
+    "h-6 w-full animate-pulse rounded-[var(--ds-radius-sm)] bg-[var(--ds-color-surface-muted)]";
+  const [categories, pages] = await Promise.all([
+    getCategories({ parentId: null }),
+    getPublishedPageLinks(),
+  ]);
   const copyrightName = COMPANY_NAME || SITE_NAME || "";
 
   return (
-    <footer className="text-sm text-neutral-500 dark:text-neutral-400">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 border-t border-neutral-200 px-6 py-12 text-sm md:flex-row md:gap-12 md:px-4 min-[1320px]:px-0 dark:border-neutral-700">
-        <div>
-          <Link
-            className="flex items-center gap-2 text-black md:pt-1 dark:text-white"
-            href="/"
-          >
-            <LogoSquare size="sm" />
-            <span className="uppercase">{SITE_NAME}</span>
-          </Link>
-        </div>
-        <Suspense
-          fallback={
-            <div className="flex h-[188px] w-[200px] flex-col gap-2">
-              <div className={skeleton} />
-              <div className={skeleton} />
-              <div className={skeleton} />
-              <div className={skeleton} />
-              <div className={skeleton} />
-              <div className={skeleton} />
+    <footer className="border-t border-[var(--ds-color-border)] bg-[var(--ds-color-bg)]">
+      <Container className="py-[var(--ds-space-16)]">
+        <div className="grid grid-cols-1 gap-[var(--ds-space-12)] md:grid-cols-12">
+          <div className="md:col-span-4">
+            <Link
+              className="flex items-center gap-[var(--ds-space-3)] text-[var(--ds-color-fg)]"
+              href="/"
+            >
+              <LogoIcon className="h-6 w-auto" />
+            </Link>
+            <p className="mt-[var(--ds-space-4)] max-w-sm text-[length:var(--ds-text-body)] leading-relaxed text-[var(--ds-color-muted)]">
+              From our kitchen to your table — crafted with care, served with heart.
+            </p>
+          </div>
+
+          <div className="md:col-span-2">
+            <Label className="text-[var(--ds-color-muted)]">Explore</Label>
+            <ul className="mt-[var(--ds-space-4)] flex flex-col gap-[var(--ds-space-2)]">
+              {exploreLinks.map((l) => (
+                <li key={l.href}>
+                  <Link
+                    href={l.href}
+                    className="text-[length:var(--ds-text-body)] text-[var(--ds-color-fg)] underline-offset-4 transition-colors hover:text-[var(--ds-color-accent)] hover:underline"
+                  >
+                    {l.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="md:col-span-3">
+            <Label className="text-[var(--ds-color-muted)]">Kitchen</Label>
+            <div className="mt-[var(--ds-space-4)]">
+              <Suspense
+                fallback={
+                  <div className="flex w-full flex-col gap-[var(--ds-space-2)]">
+                    <div className={skeleton} />
+                    <div className={skeleton} />
+                    <div className={skeleton} />
+                    <div className={skeleton} />
+                    <div className={skeleton} />
+                    <div className={skeleton} />
+                  </div>
+                }
+              >
+                <FooterMenu categories={categories} />
+              </Suspense>
             </div>
-          }
-        >
-          <FooterMenu categories={categories} />
-        </Suspense>
-        <div className="md:ml-auto">
-          <a
-            className="flex h-8 w-max flex-none items-center justify-center rounded-md border border-neutral-200 bg-white text-xs text-black dark:border-neutral-700 dark:bg-black dark:text-white"
-            aria-label="Deploy on Vercel"
-            href="https://vercel.com/templates/next.js/nextjs-commerce"
-          >
-            <span className="px-3">▲</span>
-            <hr className="h-full border-r border-neutral-200 dark:border-neutral-700" />
-            <span className="px-3">Deploy</span>
-          </a>
+          </div>
+
+          <div className="md:col-span-3">
+            <Label className="text-[var(--ds-color-muted)]">Company</Label>
+            <ul className="mt-[var(--ds-space-4)] flex flex-col gap-[var(--ds-space-2)]">
+              {supportLinks.map((l) => (
+                <li key={l.href}>
+                  <Link
+                    href={l.href}
+                    className="text-[length:var(--ds-text-body)] text-[var(--ds-color-fg)] underline-offset-4 transition-colors hover:text-[var(--ds-color-accent)] hover:underline"
+                  >
+                    {l.label}
+                  </Link>
+                </li>
+              ))}
+              {pages.map((page) => (
+                <li key={page.slug}>
+                  <Link
+                    href={`/${page.slug}`}
+                    className="text-[length:var(--ds-text-body)] text-[var(--ds-color-fg)] underline-offset-4 transition-colors hover:text-[var(--ds-color-accent)] hover:underline"
+                  >
+                    {page.title}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
-      </div>
-      <div className="border-t border-neutral-200 py-6 text-sm dark:border-neutral-700">
-        <div className="mx-auto flex w-full max-w-7xl flex-col items-center gap-1 px-4 md:flex-row md:gap-0 md:px-4 min-[1320px]:px-0">
-          <p>
+      </Container>
+      <div className="border-t border-[var(--ds-color-border)]">
+        <Container className="py-[var(--ds-space-6)]">
+          <p className="text-[length:var(--ds-text-caption)] text-[var(--ds-color-muted)]">
             &copy; {copyrightDate} {copyrightName}
             {copyrightName.length && !copyrightName.endsWith(".")
               ? "."
               : ""}{" "}
             All rights reserved.
           </p>
-          <hr className="mx-4 hidden h-4 w-[1px] border-l border-neutral-400 md:inline-block" />
-          <p>
-            <a href="https://github.com/vercel/commerce">View the source</a>
-          </p>
-          <p className="md:ml-auto">
-            <a href="https://vercel.com" className="text-black dark:text-white">
-              Created by ▲ Vercel
-            </a>
-          </p>
-        </div>
+        </Container>
       </div>
     </footer>
   );

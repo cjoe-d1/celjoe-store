@@ -109,3 +109,24 @@ export const getCategoryTree = async (options?: {
 
   return toCategoryNodeTree(data ?? []);
 };
+
+export const getCategoriesByIds = async (ids: string[], options?: { includeInactive?: boolean }) => {
+  if (!ids.length) return [];
+
+  const includeInactive = options?.includeInactive ?? false;
+
+  let query = supabase
+    .from("categories")
+    .select(
+      "id,name,slug,description,image_url,parent_id,display_order,is_active,created_at,updated_at",
+    )
+    .in("id", ids);
+
+  if (!includeInactive) query = query.eq("is_active", true);
+
+  const { data, error } = await query;
+  if (error) throw error;
+
+  const byId = new Map((data ?? []).map((c: any) => [c.id as string, c as Category]));
+  return ids.map((id) => byId.get(id)).filter(Boolean) as Category[];
+};

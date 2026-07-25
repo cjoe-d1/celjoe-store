@@ -20,9 +20,9 @@ export function FooterMenuItem({ category }: { category: Category }) {
       <Link
         href={path}
         className={clsx(
-          "block p-2 text-lg underline-offset-4 hover:text-black hover:underline md:inline-block md:text-sm dark:hover:text-neutral-300",
+          "block px-[var(--ds-space-2)] py-[var(--ds-space-1)] text-[length:var(--ds-text-body)] text-[var(--ds-color-muted)] underline-offset-4 hover:text-[var(--ds-color-fg)] hover:underline md:text-[length:var(--ds-text-caption)]",
           {
-            "text-black dark:text-neutral-300": active,
+            "text-[var(--ds-color-fg)]": active,
           },
         )}
       >

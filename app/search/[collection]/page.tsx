@@ -1,8 +1,7 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 
-import Grid from "components/grid";
-import ProductGridItems from "components/layout/product-grid-items";
+import { ProductCard } from "components/chds";
 import { defaultSort, sorting } from "lib/constants";
 import { getCategoryBySlug } from "lib/supabase/categories";
 import { getProductsByCategory } from "lib/supabase/products";
@@ -48,9 +47,24 @@ export default async function CategoryPage(props: {
       {products.length === 0 ? (
         <p className="py-3 text-lg">{`No products found in this collection`}</p>
       ) : (
-        <Grid className="grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-          <ProductGridItems products={products} />
-        </Grid>
+        <div className="grid grid-cols-1 gap-[var(--ds-space-4)] sm:grid-cols-2 lg:grid-cols-3">
+          {products.map((product) => (
+            <ProductCard
+              key={product.id}
+              product={{
+                id: product.id,
+                name: product.name,
+                slug: product.slug,
+                shortDescription: product.shortDescription,
+                imageUrl: product.imageUrl ?? product.images[0]?.url ?? null,
+                imageAlt: product.images[0]?.altText ?? product.name,
+                price: product.price,
+                isAvailable: product.isAvailable,
+                preparationTimeMinutes: product.preparationTimeMinutes,
+              }}
+            />
+          ))}
+        </div>
       )}
     </section>
   );

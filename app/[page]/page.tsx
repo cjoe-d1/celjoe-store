@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import Prose from "components/prose";
+import { Prose } from "components/chds";
 import { getPageBySlug, getPageMeta } from "lib/supabase/pages";
 import { notFound } from "next/navigation";
 

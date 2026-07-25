@@ -6,10 +6,11 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { Fragment, Suspense, useEffect, useState } from "react";
 
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
-import type { CategoryNode } from "lib/supabase/categories";
-import Search, { SearchSkeleton } from "./search";
+import { SearchBar, SearchBarSkeleton } from "components/chds";
 
-export default function MobileMenu({ categories }: { categories: CategoryNode[] }) {
+export type MobileNavItem = { label: string; href: string };
+
+export default function MobileMenu({ items }: { items: MobileNavItem[] }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isOpen, setIsOpen] = useState(false);
@@ -35,7 +36,7 @@ export default function MobileMenu({ categories }: { categories: CategoryNode[] 
       <button
         onClick={openMobileMenu}
         aria-label="Open mobile menu"
-        className="flex h-11 w-11 items-center justify-center rounded-md border border-neutral-200 text-black transition-colors md:hidden dark:border-neutral-700 dark:text-white"
+        className="flex h-[var(--ds-size-control)] w-[var(--ds-size-control)] items-center justify-center rounded-[var(--ds-radius-md)] border border-[var(--ds-color-border)] bg-[var(--ds-color-surface)] text-[var(--ds-color-fg)] transition-colors hover:bg-[var(--ds-color-surface-muted)] md:hidden focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[var(--ds-color-focus-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--ds-color-bg)]"
       >
         <Bars3Icon className="h-4" />
       </button>
@@ -61,10 +62,10 @@ export default function MobileMenu({ categories }: { categories: CategoryNode[] 
             leaveFrom="translate-x-0"
             leaveTo="translate-x-[-100%]"
           >
-            <Dialog.Panel className="fixed bottom-0 left-0 right-0 top-0 flex h-full w-full flex-col bg-white pb-6 dark:bg-black">
+            <Dialog.Panel className="fixed bottom-0 left-0 right-0 top-0 flex h-full w-full flex-col bg-[var(--ds-color-bg)] pb-6">
               <div className="p-4">
                 <button
-                  className="mb-4 flex h-11 w-11 items-center justify-center rounded-md border border-neutral-200 text-black transition-colors dark:border-neutral-700 dark:text-white"
+                  className="mb-4 flex h-[var(--ds-size-control)] w-[var(--ds-size-control)] items-center justify-center rounded-[var(--ds-radius-md)] border border-[var(--ds-color-border)] bg-[var(--ds-color-surface)] text-[var(--ds-color-fg)] transition-colors hover:bg-[var(--ds-color-surface-muted)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[var(--ds-color-focus-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--ds-color-bg)]"
                   onClick={closeMobileMenu}
                   aria-label="Close mobile menu"
                 >
@@ -72,23 +73,23 @@ export default function MobileMenu({ categories }: { categories: CategoryNode[] 
                 </button>
 
                 <div className="mb-4 w-full">
-                  <Suspense fallback={<SearchSkeleton />}>
-                    <Search />
+                  <Suspense fallback={<SearchBarSkeleton />}>
+                    <SearchBar />
                   </Suspense>
                 </div>
-                {categories.length ? (
+                {items.length ? (
                   <ul className="flex w-full flex-col">
-                    {categories.map((category) => (
+                    {items.map((item) => (
                       <li
-                        className="py-2 text-xl text-black transition-colors hover:text-neutral-500 dark:text-white"
-                        key={category.id}
+                        className="py-[var(--ds-space-2)] text-xl text-[var(--ds-color-fg)] transition-colors hover:text-[var(--ds-color-muted)]"
+                        key={item.href}
                       >
                         <Link
-                          href={`/search/${category.slug}`}
+                          href={item.href}
                           prefetch={true}
                           onClick={closeMobileMenu}
                         >
-                          {category.name}
+                          {item.label}
                         </Link>
                       </li>
                     ))}

@@ -1,0 +1,27 @@
+@layer base {
+  [data-theme="celjoe"] {
+    --ds-color-bg: var(--color-soft-linen);
+    --ds-color-fg: var(--color-text-primary);
+    --ds-color-muted: var(--color-text-secondary);
+    --ds-color-border: var(--color-border);
+    --ds-color-accent: var(--color-leaf-green);
+    --ds-color-surface: var(--color-warm-ivory);
+    --ds-color-surface-muted: color-mix(in oklab, var(--color-warm-ivory) 82%, var(--color-border));
+    --ds-color-focus-ring: color-mix(in oklab, var(--ds-color-accent) 45%, transparent);
+    --ds-color-danger: color-mix(in oklab, var(--color-smoke-merlot) 70%, #b00020);
+    --ds-color-success: var(--color-deep-forest);
+  }
+
+  [data-theme="smokehouse"] {
+    --ds-color-bg: var(--color-charcoal);
+    --ds-color-fg: var(--color-warm-ivory);
+    --ds-color-muted: color-mix(in oklab, var(--color-warm-ivory) 55%, var(--color-charcoal));
+    --ds-color-border: color-mix(in oklab, var(--color-charcoal) 60%, var(--color-border));
+    --ds-color-accent: var(--color-ember);
+    --ds-color-surface: color-mix(in oklab, var(--color-charcoal) 88%, black);
+    --ds-color-surface-muted: color-mix(in oklab, var(--color-charcoal) 78%, black);
+    --ds-color-focus-ring: color-mix(in oklab, var(--ds-color-accent) 45%, transparent);
+    --ds-color-danger: color-mix(in oklab, var(--color-smoke-merlot) 88%, #b00020);
+    --ds-color-success: color-mix(in oklab, var(--color-deep-forest) 80%, var(--color-warm-ivory));
+  }
+}

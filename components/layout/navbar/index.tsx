@@ -1,60 +1,71 @@
-import CartModal from "components/cart/modal";
-import LogoSquare from "components/logo-square";
-import { getCategoryTree } from "lib/supabase/categories";
+import ChdsCartDrawer from "components/cart/chds-cart-drawer";
+import { Container, SearchBar, SearchBarSkeleton } from "components/chds";
+import { LogoIcon } from "components/icons";
 import Link from "next/link";
 import { Suspense } from "react";
-import MobileMenu from "./mobile-menu";
-import Search, { SearchSkeleton } from "./search";
+import NavbarChrome from "./chrome";
+import MobileMenu, { type MobileNavItem } from "./mobile-menu";
 
 const { SITE_NAME } = process.env;
 
-export async function Navbar() {
-  const categories = await getCategoryTree();
+const primaryNav: MobileNavItem[] = [
+  { label: "Home", href: "/" },
+  { label: "Kitchen", href: "/kitchen" },
+  { label: "BBQ", href: "/bbq" },
+  { label: "Catering", href: "/catering" },
+  { label: "Our Story", href: "/our-story" },
+  { label: "Track Order", href: "/track-order" },
+  { label: "Account", href: "/account" },
+];
 
+export async function Navbar() {
   return (
-    <nav className="relative flex items-center justify-between p-4 lg:px-6">
-      <div className="block flex-none md:hidden">
-        <Suspense fallback={null}>
-          <MobileMenu categories={categories} />
-        </Suspense>
-      </div>
-      <div className="flex w-full items-center">
-        <div className="flex w-full md:w-1/3">
-          <Link
-            href="/"
-            prefetch={true}
-            className="mr-2 flex w-full items-center justify-center md:w-auto lg:mr-6"
-          >
-            <LogoSquare />
-            <div className="ml-2 flex-none text-sm font-medium uppercase md:hidden lg:block">
-              {SITE_NAME}
+    <NavbarChrome>
+      <nav aria-label="Primary">
+        <Container className="flex items-center justify-between gap-[var(--ds-space-6)] py-[var(--ds-space-5)]">
+          <div className="block flex-none md:hidden">
+            <Suspense fallback={null}>
+              <MobileMenu items={primaryNav} />
+            </Suspense>
+          </div>
+
+          <div className="flex w-full items-center justify-between gap-[var(--ds-space-6)]">
+            <div className="flex items-center gap-[var(--ds-space-10)]">
+              <Link
+                href="/"
+                prefetch={true}
+                aria-label={SITE_NAME ?? "Home"}
+                className="flex items-center gap-[var(--ds-space-3)] text-[var(--ds-color-fg)] transition-opacity hover:opacity-80"
+              >
+                <LogoIcon className="h-6 w-auto" />
+              </Link>
+              <ul className="hidden items-center gap-[var(--ds-space-7)] md:flex">
+                {primaryNav.map((item) => (
+                  <li key={item.href}>
+                    <Link
+                      href={item.href}
+                      prefetch={true}
+                      className="text-[length:var(--ds-text-caption)] uppercase tracking-[0.18em] text-[var(--ds-color-muted)] underline-offset-4 transition-colors hover:text-[var(--ds-color-fg)]"
+                    >
+                      {item.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
             </div>
-          </Link>
-          {categories.length ? (
-            <ul className="hidden gap-6 text-sm md:flex md:items-center">
-              {categories.map((category) => (
-                <li key={category.id}>
-                  <Link
-                    href={`/search/${category.slug}`}
-                    prefetch={true}
-                    className="text-neutral-500 underline-offset-4 hover:text-black hover:underline dark:text-neutral-400 dark:hover:text-neutral-300"
-                  >
-                    {category.name}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          ) : null}
-        </div>
-        <div className="hidden justify-center md:flex md:w-1/3">
-          <Suspense fallback={<SearchSkeleton />}>
-            <Search />
-          </Suspense>
-        </div>
-        <div className="flex justify-end md:w-1/3">
-          <CartModal />
-        </div>
-      </div>
-    </nav>
+
+            <div className="hidden md:flex md:flex-1 md:justify-center md:max-w-md">
+              <Suspense fallback={<SearchBarSkeleton />}>
+                <SearchBar />
+              </Suspense>
+            </div>
+
+            <div className="flex items-center justify-end">
+              <ChdsCartDrawer />
+            </div>
+          </div>
+        </Container>
+      </nav>
+    </NavbarChrome>
   );
 }

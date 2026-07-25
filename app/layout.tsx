@@ -1,14 +1,19 @@
-import { CartProvider } from "components/cart/cart-context";
 import { Navbar } from "components/layout/navbar";
 import { WelcomeToast } from "components/welcome-toast";
-import { GeistSans } from "geist/font/sans";
+import { Montserrat } from "next/font/google";
 import { getCart } from "lib/supabase/cart";
 import { ReactNode } from "react";
-import { Toaster } from "sonner";
+import { AppProviders } from "providers/app-providers";
 import "./globals.css";
 import { baseUrl } from "lib/utils";
 
 const { SITE_NAME } = process.env;
+
+const montserrat = Montserrat({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-montserrat",
+});
 
 export const metadata = {
   metadataBase: new URL(baseUrl),
@@ -31,16 +36,15 @@ export default async function RootLayout({
   const cart = getCart();
 
   return (
-    <html lang="en" className={GeistSans.variable}>
-      <body className="bg-neutral-50 text-black selection:bg-teal-300 dark:bg-neutral-900 dark:text-white dark:selection:bg-pink-500 dark:selection:text-white">
-        <CartProvider cartPromise={cart}>
+    <html lang="en" className={montserrat.variable} data-theme="celjoe">
+      <body className="bg-[var(--ds-color-bg)] font-[family-name:var(--ds-font-sans)] text-[var(--ds-color-fg)] selection:bg-[var(--ds-color-accent)] selection:text-white">
+        <AppProviders cartPromise={cart}>
           <Navbar />
           <main>
             {children}
-            <Toaster closeButton />
             <WelcomeToast />
           </main>
-        </CartProvider>
+        </AppProviders>
       </body>
     </html>
   );

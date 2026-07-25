@@ -22,11 +22,16 @@ export default async function OpengraphImage(
 
   return new ImageResponse(
     (
-      <div tw="flex h-full w-full flex-col items-center justify-center bg-black">
-        <div tw="flex flex-none items-center justify-center border border-neutral-700 h-[160px] w-[160px] rounded-3xl">
-          <LogoIcon width="64" height="58" fill="white" />
+      <div tw="flex h-full w-full flex-col items-center justify-center bg-[#0E1F14]">
+        <div tw="flex flex-none items-center justify-center h-[160px] w-[160px]">
+          <LogoIcon width="140" height="32" fill="white" />
         </div>
-        <p tw="mt-12 text-6xl font-bold text-white">{title}</p>
+        <p tw="mt-12 text-5xl font-bold text-white tracking-wide">
+          {title}
+        </p>
+        <p tw="mt-4 text-2xl text-[#9BB59C] tracking-wide">
+          From our kitchen to your table
+        </p>
       </div>
     ),
     {

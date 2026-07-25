@@ -1,19 +1,20 @@
 "use client";
 
+import { Button } from "components/chds";
+
 export default function Error({ reset }: { reset: () => void }) {
   return (
-    <div className="mx-auto my-4 flex max-w-xl flex-col rounded-lg border border-neutral-200 bg-white p-8 md:p-12 dark:border-neutral-800 dark:bg-black">
-      <h2 className="text-xl font-bold">Oh no!</h2>
-      <p className="my-2">
-        There was an issue with our storefront. This could be a temporary issue,
+    <div className="mx-auto my-4 flex max-w-xl flex-col gap-[var(--ds-space-4)] rounded-[var(--ds-radius-xl)] border border-[var(--ds-color-border)] bg-[var(--ds-color-surface)] p-[var(--ds-space-8)] md:p-[var(--ds-space-12)]">
+      <h2 className="text-[length:var(--ds-text-h3)] font-[var(--ds-font-weight-medium)] text-[var(--ds-color-fg)]">
+        Something went wrong.
+      </h2>
+      <p className="text-[length:var(--ds-text-body)] text-[var(--ds-color-muted)]">
+        There was an issue with our storefront. This could be temporary —
         please try your action again.
       </p>
-      <button
-        className="mx-auto mt-4 flex w-full items-center justify-center rounded-full bg-blue-600 p-4 tracking-wide text-white hover:opacity-90"
-        onClick={() => reset()}
-      >
+      <Button onClick={() => reset()} className="w-full">
         Try Again
-      </button>
+      </Button>
     </div>
   );
 }

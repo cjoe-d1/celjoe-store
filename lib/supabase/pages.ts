@@ -67,6 +67,23 @@ export const getPages = async (): Promise<Pick<SitePage, "slug" | "updatedAt">[]
   }));
 };
 
+export const getPublishedPageLinks = async (): Promise<
+  { slug: string; title: string; updatedAt: string }[]
+> => {
+  const { data, error } = await supabase
+    .from("site_pages")
+    .select("slug,title,updated_at")
+    .eq("published", true)
+    .order("updated_at", { ascending: false });
+
+  if (error) throw error;
+  return (data ?? []).map((row: any) => ({
+    slug: row.slug as string,
+    title: row.title as string,
+    updatedAt: row.updated_at as string,
+  }));
+};
+
 export const getPageMeta = (page: SitePage) => {
   const title = page.seoTitle || page.title;
   const description =
