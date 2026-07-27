@@ -7,6 +7,12 @@ const ADMIN_PUBLIC_PATHS = new Set<string>([
   "/admin/reset-password",
 ]);
 const ACCOUNT_PROTECTED_PREFIXES = ["/account"];
+const ACCOUNT_PUBLIC_PATHS = new Set<string>([
+  "/account/login",
+  "/account/register",
+  "/account/forgot-password",
+  "/account/reset-password",
+]);
 
 const isAdminPath = (pathname: string) =>
   ADMIN_PROTECTED_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
@@ -16,12 +22,24 @@ const isAccountPath = (pathname: string) =>
     (p) => pathname === p || pathname.startsWith(`${p}/`),
   );
 
+const hasSupabaseAuthCookie = (request: NextRequest): boolean => {
+  for (const cookie of request.cookies.getAll()) {
+    const name = cookie.name;
+    // @supabase/ssr uses cookies named `sb-<project_ref>-auth-token`, often
+    // chunked into `sb-<project_ref>-auth-token.0`, `.1`, etc. Accept any
+    // cookie matching that pattern as evidence of a customer session.
+    if (name.includes("auth-token") && name.startsWith("sb-")) return true;
+  }
+  return false;
+};
+
 export function middleware(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
-  const hasSession = Boolean(request.cookies.get("celjoe_session")?.value);
+  const hasAdminSession = Boolean(request.cookies.get("celjoe_session")?.value);
+  const hasCustomerSession = hasSupabaseAuthCookie(request);
 
   if (isAdminPath(pathname) && !ADMIN_PUBLIC_PATHS.has(pathname)) {
-    if (!hasSession) {
+    if (!hasAdminSession) {
       const url = request.nextUrl.clone();
       url.pathname = "/admin/login";
       url.search = `?next=${encodeURIComponent(pathname + (search || ""))}`;
@@ -29,11 +47,18 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  if (isAccountPath(pathname)) {
-    if (!hasSession) {
-      // For account pages, the public Supabase session is the source of truth.
-      // We let the page server-component handle the redirect to /account/login
-      // so unauthenticated users still see the customer shell.
+  if (
+    isAccountPath(pathname) &&
+    !ACCOUNT_PUBLIC_PATHS.has(pathname)
+  ) {
+    if (!hasCustomerSession) {
+      // Redirect at the HTTP level so that an unauthenticated request to a
+      // protected customer page goes to the sign-in screen immediately,
+      // without depending on the in-band RSC payload redirect.
+      const url = request.nextUrl.clone();
+      url.pathname = "/account/login";
+      url.search = `?next=${encodeURIComponent(pathname + (search || ""))}`;
+      return NextResponse.redirect(url);
     }
   }
 

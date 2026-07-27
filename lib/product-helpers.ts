@@ -10,7 +10,7 @@ export function toProductCardModel(p: Product): ProductCardModel {
     name: p.name,
     slug: p.slug,
     shortDescription: p.shortDescription,
-    imageUrl: p.imageUrl ?? p.images[0]?.url ?? null,
+    imageUrl: p.images[0]?.url ?? null,
     imageAlt: p.images[0]?.altText ?? p.name,
     price: p.price,
     isAvailable: p.isAvailable,

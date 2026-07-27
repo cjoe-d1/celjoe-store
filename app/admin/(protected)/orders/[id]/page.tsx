@@ -8,9 +8,9 @@ import {
 } from "components/chds/admin";
 import { Card, Label, Button } from "components/chds";
 import { getAdminOrderById } from "lib/supabase/admin/orders";
-import { getCurrentSession } from "lib/auth/session";
-import { requirePermission } from "lib/auth/guards";
-import { buildOrderTimeline, formatMoney, statusLabel } from "lib/supabase/orders";
+import { requireAdmin } from "lib/auth/guards";
+import { formatMoney } from "lib/supabase/orders";
+import { OrderActions } from "./order-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -28,14 +28,10 @@ export async function generateMetadata(props: {
 export default async function AdminOrderDetailPage(props: {
   params: Promise<{ id: string }>;
 }) {
-  const session = await getCurrentSession();
-  if (!session) return null;
-  requirePermission(session, "orders:read");
+  await requireAdmin();
   const { id } = await props.params;
   const order = await getAdminOrderById(id);
   if (!order) notFound();
-
-  const timeline = buildOrderTimeline(order.orderStatus);
 
   return (
     <>
@@ -126,43 +122,7 @@ export default async function AdminOrderDetailPage(props: {
             </div>
           </Card>
 
-          <Card variant="dashboard">
-            <Label tone="muted">Timeline</Label>
-            <ul className="mt-[var(--ds-space-3)] flex flex-col gap-[var(--ds-space-2)]">
-              {timeline.map((step) => (
-                <li
-                  key={step.status}
-                  className={
-                    "rounded-[var(--ds-radius-md)] border p-[var(--ds-space-2)] text-[length:var(--ds-text-caption)] " +
-                    (step.isCurrent
-                      ? "border-[var(--ds-color-accent)] bg-[var(--ds-color-accent)]/10 text-[var(--ds-color-fg)]"
-                      : step.isComplete
-                        ? "border-[var(--ds-color-success)]/30 bg-[var(--ds-color-success)]/10 text-[var(--ds-color-fg)]"
-                        : "border-[var(--ds-color-border)] text-[var(--ds-color-muted)]")
-                  }
-                >
-                  <div className="text-[length:var(--ds-text-body)] text-[var(--ds-color-fg)]">
-                    {step.label}
-                  </div>
-                  <div>{step.description}</div>
-                </li>
-              ))}
-            </ul>
-            <div className="mt-[var(--ds-space-4)] flex flex-col gap-[var(--ds-space-2)]">
-              <Button variant="primary" disabled>
-                Mark as preparing
-              </Button>
-              <Button variant="outline" disabled>
-                Assign rider
-              </Button>
-              <Button variant="ghost" disabled>
-                Issue refund
-              </Button>
-            </div>
-            <p className="mt-[var(--ds-space-3)] text-[length:var(--ds-text-caption)] text-[var(--ds-color-muted)]">
-              {statusLabel(order.orderStatus)} · State changes are recorded in the audit log.
-            </p>
-          </Card>
+          <OrderActions order={order} canManage={true} />
         </div>
       </AdminPageContainer>
     </>

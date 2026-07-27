@@ -17,8 +17,7 @@ export type OrderStatus =
   | "confirmed"
   | "preparing"
   | "ready"
-  | "out_for_delivery"
-  | "delivered"
+  | "completed"
   | "cancelled";
 
 export type PaymentStatus = "pending" | "paid" | "failed" | "refunded" | "partial";
@@ -70,8 +69,6 @@ export type Order = {
   paymentMethod: PaymentMethod | string | null;
   notes: string | null;
   items: OrderLine[];
-  assignedRiderId: string | null;
-  assignedRiderName: string | null;
   preparationMinutes: number | null;
   createdAt: string;
   updatedAt: string;
@@ -110,12 +107,8 @@ const STATUS_LABELS: Record<OrderStatus, { label: string; description: string }>
     label: "Ready",
     description: "Your order is packed and ready for the next step.",
   },
-  out_for_delivery: {
-    label: "On the way",
-    description: "Your order is on its way to you.",
-  },
-  delivered: {
-    label: "Delivered",
+  completed: {
+    label: "Completed",
     description: "Enjoy your meal. Thank you for choosing Celjoe.",
   },
   cancelled: {
@@ -129,8 +122,7 @@ export const ORDER_TIMELINE: OrderStatus[] = [
   "confirmed",
   "preparing",
   "ready",
-  "out_for_delivery",
-  "delivered",
+  "completed",
 ];
 
 export function buildOrderTimeline(status: OrderStatus): OrderTimelineEvent[] {
@@ -141,8 +133,8 @@ export function buildOrderTimeline(status: OrderStatus): OrderTimelineEvent[] {
       status: s,
       label: meta.label,
       description: meta.description,
-      isComplete: currentIndex > index || status === "delivered",
-      isCurrent: currentIndex === index && status !== "delivered" && status !== "cancelled",
+      isComplete: currentIndex > index || status === "completed",
+      isCurrent: currentIndex === index && status !== "completed" && status !== "cancelled",
     };
   });
 }
@@ -180,10 +172,6 @@ type OrderRow = {
   payment_method?: string | null;
   paymentMethod?: string | null;
   notes?: string | null;
-  assigned_rider_id?: string | null;
-  assignedRiderId?: string | null;
-  assigned_rider_name?: string | null;
-  assignedRiderName?: string | null;
   preparation_minutes?: number | null;
   preparationMinutes?: number | null;
   created_at?: string;
@@ -225,8 +213,6 @@ export function mapOrderRow(d: OrderRow, items: OrderLine[] = []): Order {
     paymentStatus: d.payment_status ?? d.paymentStatus ?? "pending",
     paymentMethod: d.payment_method ?? d.paymentMethod ?? null,
     notes: d.notes ?? null,
-    assignedRiderId: d.assigned_rider_id ?? d.assignedRiderId ?? null,
-    assignedRiderName: d.assigned_rider_name ?? d.assignedRiderName ?? null,
     preparationMinutes: d.preparation_minutes ?? d.preparationMinutes ?? null,
     items,
     createdAt: d.created_at ?? d.createdAt ?? new Date().toISOString(),

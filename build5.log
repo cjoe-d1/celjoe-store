@@ -1,0 +1,55 @@
+﻿node.exe : $ next build
+At C:\Users\User\AppData\Roaming\npm\pnpm.ps1:24 char:5
++     & "node$exe"  "$basedir/node_modules/pnpm/bin/pnpm.mjs" $args
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ($ next build:String) [], RemoteEx 
+   ception
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[baseline-browser-mapping] The data in this module is over two months old.  To 
+ensure accurate Baseline data, please update: `npm i 
+baseline-browser-mapping@latest -D`
+   Γû▓ Next.js 15.6.0-canary.60 (Turbopack)
+   - Environments: .env.local
+   - Experiments (use with caution):
+     Γ£ô inlineCss
+     Γ£ô ppr
+     Γ£ô rdcForNavigations (enabled by `experimental.ppr`)
+     Γ£ô useCache
+
+ ΓÜá The "middleware" file convention is deprecated. Please use "proxy" 
+instead.
+   Creating an optimized production build ...
+[baseline-browser-mapping] The data in this module is over two months old.  To 
+ensure accurate Baseline data, please update: `npm i 
+baseline-browser-mapping@latest -D`
+ Γ£ô Compiled successfully in 44s
+   Running TypeScript ...
+Failed to compile.
+
+./app/admin/(protected)/cms/pages/manager.tsx:89:54
+Type error: Type '{ name: string; defaultChecked: true; label: string; }' is 
+not assignable to type 'IntrinsicAttributes & 
+Omit<DetailedHTMLProps<InputHTMLAttributes<HTMLInputElement>, 
+HTMLInputElement>, "ref"> & { ...; }'.
+  Property 'label' does not exist on type 'IntrinsicAttributes & 
+Omit<DetailedHTMLProps<InputHTMLAttributes<HTMLInputElement>, 
+HTMLInputElement>, "ref"> & { ...; }'.
+
+[0m [90m 87 |[39m           [33m<[39m[33mTextarea[39m 
+name[33m=[39m[32m"body"[39m required rows[33m=[39m{[35m6[39m} 
+[33m/[39m[33m>[39m
+ [90m 88 |[39m         [33m<[39m[33m/[39m[33mField[39m[33m>[39m
+[31m[1m>[22m[39m[90m 89 |[39m         [33m<[39m[33mCheckbox[39m 
+name[33m=[39m[32m"is_published"[39m defaultChecked 
+label[33m=[39m[32m"Published"[39m [33m/[39m[33m>[39m
+ [90m    |[39m                                                      
+[31m[1m^[22m[39m
+ [90m 90 |[39m         [33m<[39m[33mButton[39m 
+type[33m=[39m[32m"submit"[39m variant[33m=[39m[32m"primary"[39m 
+disabled[33m=[39m{pending}[33m>[39m
+ [90m 91 |[39m           {pending [33m?[39m [32m"CreatingΓÇª"[39m 
+[33m:[39m [32m"Create page"[39m}
+ [90m 92 |[39m         [33m<[39m[33m/[39m[33mButton[39m[33m>[39m[0m
+Next.js build worker exited with code: 1 and signal: null
+[ELIFECYCLE] Command failed with exit code 1.

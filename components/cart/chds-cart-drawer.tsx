@@ -4,7 +4,6 @@ import { useCart } from "components/cart/cart-context";
 import { CartDrawer, CartItem } from "components/chds";
 import { ShoppingBagIcon } from "@heroicons/react/24/outline";
 import { useState } from "react";
-import { removeItem, updateItemQuantity } from "./actions";
 
 export default function ChdsCartDrawer() {
   const { cart, updateCartItem } = useCart();
@@ -67,23 +66,17 @@ export default function ChdsCartDrawer() {
           <CartItem
             item={item}
             onDecrease={() => {
+              const variantId = (item as any).rawLine.variant?.id || "";
               const newQuantity = item.quantity - 1;
-              if (newQuantity === 0) {
-                updateCartItem((item as any).rawLine.variant?.id || "", "delete");
-                removeItem(null, (item as any).rawLine.variant?.id || "");
-              } else {
-                updateCartItem((item as any).rawLine.variant?.id || "", "minus");
-                updateItemQuantity(null, { variantId: (item as any).rawLine.variant?.id || "", quantity: newQuantity });
-              }
+              updateCartItem(variantId, newQuantity === 0 ? "delete" : "minus");
             }}
             onIncrease={() => {
-              const newQuantity = item.quantity + 1;
-              updateCartItem((item as any).rawLine.variant?.id || "", "plus");
-              updateItemQuantity(null, { variantId: (item as any).rawLine.variant?.id || "", quantity: newQuantity });
+              const variantId = (item as any).rawLine.variant?.id || "";
+              updateCartItem(variantId, "plus");
             }}
             onRemove={() => {
-              updateCartItem((item as any).rawLine.variant?.id || "", "delete");
-              removeItem(null, (item as any).rawLine.variant?.id || "");
+              const variantId = (item as any).rawLine.variant?.id || "";
+              updateCartItem(variantId, "delete");
             }}
           />
         )}

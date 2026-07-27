@@ -1,51 +1,28 @@
 import Link from "next/link";
+import { AdminPageContainer, AdminTopBar } from "components/chds/admin";
+import { Card, Label, Button } from "components/chds";
+import { getProducts } from "lib/supabase/admin/products";
+import { requireAdmin } from "lib/auth/guards";
 import { buildMetadata } from "lib/seo";
-import {
-  AdminPageContainer,
-  AdminTopBar,
-} from "components/chds/admin";
-import { Field, TextInput, Select, Button, Label } from "components/chds";
-import { AdminTable, EmptyTable, FilterRow } from "components/chds/table";
-import { listAdminProducts, listAdminCategories } from "lib/supabase/admin/catalog";
-import { getCurrentSession } from "lib/auth/session";
-import { requirePermission } from "lib/auth/guards";
 
 export const dynamic = "force-dynamic";
 
 export const metadata = buildMetadata({
   title: "Products",
-  description: "Catalog and Smokehouse products.",
+  description: "Manage the Celjoe menu, Smokehouse, and catering items.",
   path: "/admin/products",
   noIndex: true,
 });
 
-type SearchParams = Promise<{ q?: string; category?: string; availability?: string; page?: string }>;
-
-export default async function AdminProductsPage(props: { searchParams: SearchParams }) {
-  const session = await getCurrentSession();
-  if (!session) return null;
-  requirePermission(session, "catalog:read");
-  const sp = await props.searchParams;
-  const q = sp.q ?? "";
-  const categoryId = sp.category ?? "";
-  const isAvailable =
-    sp.availability === "available"
-      ? true
-      : sp.availability === "unavailable"
-        ? false
-        : undefined;
-  const page = Number(sp.page ?? "1") || 1;
-
-  const [list, categories] = await Promise.all([
-    listAdminProducts({ search: q, categoryId, isAvailable, page, pageSize: 20 }),
-    listAdminCategories(),
-  ]);
+export default async function AdminProductsPage() {
+  await requireAdmin();
+  const products = await getProducts();
 
   return (
     <>
       <AdminTopBar
         title="Products"
-        description="Menu items, Smokehouse offerings, and catering packages."
+        description="Manage the menu, Smokehouse, and catering items."
         actions={
           <Button asChild variant="primary">
             <Link href="/admin/products/new">Add product</Link>
@@ -53,82 +30,109 @@ export default async function AdminProductsPage(props: { searchParams: SearchPar
         }
       />
       <AdminPageContainer>
-        <FilterRow>
-          <form className="flex flex-wrap items-end gap-[var(--ds-space-3)]" method="get">
-            <Field label="Search">
-              <TextInput name="q" defaultValue={q} placeholder="Product name" />
-            </Field>
-            <Field label="Category">
-              <Select name="category" defaultValue={categoryId}>
-                <option value="">All categories</option>
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </Select>
-            </Field>
-            <Field label="Availability">
-              <Select name="availability" defaultValue={sp.availability ?? ""}>
-                <option value="">All</option>
-                <option value="available">Available</option>
-                <option value="unavailable">Unavailable</option>
-              </Select>
-            </Field>
-            <Button type="submit">Apply</Button>
-            <Button asChild variant="ghost">
-              <Link href="/admin/products">Reset</Link>
-            </Button>
-          </form>
-        </FilterRow>
-
-        {list.products.length === 0 ? (
-          <EmptyTable
-            title="No products match your filters"
-            description="Adjust your search, category, or availability."
-          />
+        {products.length === 0 ? (
+          <Card variant="dashboard">
+            <div className="py-[var(--ds-space-12)] text-center">
+              <Label tone="muted">No products yet</Label>
+              <p className="mt-[var(--ds-space-2)] text-[length:var(--ds-text-caption)] text-[var(--ds-color-muted)]">
+                Click &ldquo;Add product&rdquo; to create your first menu item.
+              </p>
+            </div>
+          </Card>
         ) : (
-          <AdminTable>
-            <table className="w-full border-collapse text-left text-[length:var(--ds-text-body)]">
-              <thead className="bg-[var(--ds-color-surface-muted)] text-[length:var(--ds-text-label)] uppercase tracking-wide text-[var(--ds-color-muted)]">
-                <tr>
-                  <th className="px-[var(--ds-space-4)] py-[var(--ds-space-3)]">Product</th>
-                  <th className="px-[var(--ds-space-4)] py-[var(--ds-space-3)]">Category</th>
-                  <th className="px-[var(--ds-space-4)] py-[var(--ds-space-3)] text-right">Price</th>
-                  <th className="px-[var(--ds-space-4)] py-[var(--ds-space-3)]">Status</th>
-                  <th className="px-[var(--ds-space-4)] py-[var(--ds-space-3)] text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {list.products.map((p) => (
-                  <tr key={p.id} className="border-t border-[var(--ds-color-border)]">
-                    <td className="px-[var(--ds-space-4)] py-[var(--ds-space-3)]">
-                      <div className="text-[var(--ds-color-fg)]">{p.name}</div>
-                      <div className="text-[length:var(--ds-text-caption)] text-[var(--ds-color-muted)]">
-                        {p.sku ?? "—"} · {p.preparationTimeMinutes ?? 0}m prep
-                      </div>
-                    </td>
-                    <td className="px-[var(--ds-space-4)] py-[var(--ds-space-3)] text-[var(--ds-color-fg)]">
-                      {p.category?.name ?? "—"}
-                    </td>
-                    <td className="px-[var(--ds-space-4)] py-[var(--ds-space-3)] text-right text-[var(--ds-color-fg)]">
-                      ₦{Number(p.price.amount).toLocaleString("en-NG")}
-                    </td>
-                    <td className="px-[var(--ds-space-4)] py-[var(--ds-space-3)]">
-                      <Label tone="muted">
-                        {p.isAvailable ? "Available" : "Unavailable"}
-                      </Label>
-                    </td>
-                    <td className="px-[var(--ds-space-4)] py-[var(--ds-space-3)] text-right">
-                      <Button asChild variant="ghost" size="sm">
-                        <Link href={`/admin/products/${p.id}`}>View</Link>
-                      </Button>
-                    </td>
+          <Card variant="dashboard" className="overflow-hidden !p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-[length:var(--ds-text-body)]">
+                <thead>
+                  <tr className="border-b border-[var(--ds-color-border)] bg-[var(--ds-color-surface-muted)]">
+                    <th className="px-[var(--ds-space-4)] py-[var(--ds-space-3)] font-[var(--ds-font-weight-medium)] text-[var(--ds-color-muted)]">
+                      Name
+                    </th>
+                    <th className="px-[var(--ds-space-4)] py-[var(--ds-space-3)] font-[var(--ds-font-weight-medium)] text-[var(--ds-color-muted)]">
+                      Category
+                    </th>
+                    <th className="px-[var(--ds-space-4)] py-[var(--ds-space-3)] font-[var(--ds-font-weight-medium)] text-[var(--ds-color-muted)]">
+                      Price
+                    </th>
+                    <th className="px-[var(--ds-space-4)] py-[var(--ds-space-3)] font-[var(--ds-font-weight-medium)] text-[var(--ds-color-muted)]">
+                      Status
+                    </th>
+                    <th className="px-[var(--ds-space-4)] py-[var(--ds-space-3)] font-[var(--ds-font-weight-medium)] text-[var(--ds-color-muted)]">
+                      Available
+                    </th>
+                    <th className="px-[var(--ds-space-4)] py-[var(--ds-space-3)] font-[var(--ds-font-weight-medium)] text-[var(--ds-color-muted)]">
+                      Featured
+                    </th>
+                    <th className="px-[var(--ds-space-4)] py-[var(--ds-space-3)]"></th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </AdminTable>
+                </thead>
+                <tbody className="divide-y divide-[var(--ds-color-border)]">
+                  {products.map((p) => (
+                    <tr
+                      key={p.id}
+                      className={
+                        "hover:bg-[var(--ds-color-surface-muted)] " +
+                        (p.is_archived ? "opacity-50" : "")
+                      }
+                    >
+                      <td className="px-[var(--ds-space-4)] py-[var(--ds-space-3)]">
+                        <div className="flex flex-col">
+                          <span className="font-[var(--ds-font-weight-medium)] text-[var(--ds-color-fg)]">
+                            {p.name}
+                          </span>
+                          <span className="text-[length:var(--ds-text-caption)] text-[var(--ds-color-muted)]">
+                            /{p.slug}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="whitespace-nowrap px-[var(--ds-space-4)] py-[var(--ds-space-3)] text-[length:var(--ds-text-caption)] text-[var(--ds-color-muted)]">
+                        {p.primary_category?.name ?? "—"}
+                      </td>
+                      <td className="whitespace-nowrap px-[var(--ds-space-4)] py-[var(--ds-space-3)] text-[var(--ds-color-fg)]">
+                        ₦{p.price.toFixed(2)}
+                        {p.discount_price ? (
+                          <span className="ml-[var(--ds-space-1)] text-[var(--ds-color-muted)] line-through">
+                            ₦{p.discount_price.toFixed(2)}
+                          </span>
+                        ) : null}
+                      </td>
+                      <td className="whitespace-nowrap px-[var(--ds-space-4)] py-[var(--ds-space-3)]">
+                        <span
+                          className={
+                            "rounded-full px-[var(--ds-space-2)] py-[var(--ds-space-1)] text-[length:var(--ds-text-caption)] " +
+                            (p.status === "active"
+                              ? "bg-[var(--ds-color-success)]/10 text-[var(--ds-color-success)]"
+                              : "bg-[var(--ds-color-surface-muted)] text-[var(--ds-color-muted)]")
+                          }
+                        >
+                          {p.status}
+                        </span>
+                        {p.is_archived ? (
+                          <span className="ml-[var(--ds-space-1)] rounded-full bg-[var(--ds-color-warning)]/10 px-[var(--ds-space-2)] py-[var(--ds-space-1)] text-[length:var(--ds-text-caption)] text-[var(--ds-color-warning)]">
+                            archived
+                          </span>
+                        ) : null}
+                      </td>
+                      <td className="whitespace-nowrap px-[var(--ds-space-4)] py-[var(--ds-space-3)] text-[var(--ds-color-fg)]">
+                        {p.is_available ? "Yes" : "No"}
+                      </td>
+                      <td className="whitespace-nowrap px-[var(--ds-space-4)] py-[var(--ds-space-3)] text-[var(--ds-color-fg)]">
+                        {p.is_featured ? "Yes" : "—"}
+                      </td>
+                      <td className="whitespace-nowrap px-[var(--ds-space-4)] py-[var(--ds-space-3)] text-right">
+                        <Link
+                          href={`/admin/products/${p.id}`}
+                          className="text-[var(--ds-color-accent)] underline-offset-2 hover:underline"
+                        >
+                          Edit
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
         )}
       </AdminPageContainer>
     </>

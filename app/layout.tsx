@@ -37,7 +37,7 @@ export default async function RootLayout({
 
   return (
     <html lang="en" className={montserrat.variable} data-theme="celjoe">
-      <body className="bg-[var(--ds-color-bg)] font-[family-name:var(--ds-font-sans)] text-[var(--ds-color-fg)] selection:bg-[var(--ds-color-accent)] selection:text-white">
+      <body className="bg-[var(--ds-color-bg)] [font-family:var(--ds-font-sans)] text-[var(--ds-color-fg)] selection:bg-[var(--ds-color-accent)] selection:text-white">
         <AppProviders cartPromise={cart}>
           <Navbar />
           <main>

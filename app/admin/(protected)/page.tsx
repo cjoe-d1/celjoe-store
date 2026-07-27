@@ -12,8 +12,7 @@ import {
   ChartWrapper,
 } from "components/chds/dashboard";
 import { getOperationsDashboard } from "lib/supabase/admin/dashboard";
-import { getCurrentSession } from "lib/auth/session";
-import { requirePermission } from "lib/auth/guards";
+import { requireAdmin } from "lib/auth/guards";
 import { Suspense } from "react";
 import { DashboardSkeleton } from "./orders/skeleton";
 import { formatMoney } from "lib/supabase/orders";
@@ -28,9 +27,7 @@ export const metadata = buildMetadata({
 });
 
 export default async function AdminDashboardPage() {
-  const session = await getCurrentSession();
-  if (!session) return null;
-  requirePermission(session, "orders:read");
+  const session = await requireAdmin();
   return (
     <Suspense fallback={<DashboardSkeleton />}>
       <DashboardContent greetingName={session.fullName} />
@@ -155,21 +152,13 @@ async function DashboardContent({ greetingName }: { greetingName: string }) {
 
         <div className="grid grid-cols-1 gap-[var(--ds-space-4)] lg:grid-cols-2">
           <ChartWrapper title="Today's performance">
-            <div className="grid grid-cols-3 gap-[var(--ds-space-4)]">
+            <div className="grid grid-cols-2 gap-[var(--ds-space-4)]">
               <div>
                 <div className="text-[length:var(--ds-text-h3)] font-[var(--ds-font-weight-medium)] text-[var(--ds-color-fg)]">
                   {dashboard.recentOrders.filter((o) => o.orderStatus === "ready").length}
                 </div>
                 <div className="text-[length:var(--ds-text-caption)] text-[var(--ds-color-muted)]">
                   Ready for pickup
-                </div>
-              </div>
-              <div>
-                <div className="text-[length:var(--ds-text-h3)] font-[var(--ds-font-weight-medium)] text-[var(--ds-color-fg)]">
-                  {dashboard.recentOrders.filter((o) => o.orderStatus === "out_for_delivery").length}
-                </div>
-                <div className="text-[length:var(--ds-text-caption)] text-[var(--ds-color-muted)]">
-                  On the way
                 </div>
               </div>
               <div>
@@ -192,7 +181,7 @@ async function DashboardContent({ greetingName }: { greetingName: string }) {
                 <Link href="/admin/inventory">Inventory</Link>
               </Button>
               <Button asChild variant="outline">
-                <Link href="/admin/riders">Riders</Link>
+                <Link href="/admin/orders">All orders</Link>
               </Button>
             </div>
           </ChartWrapper>

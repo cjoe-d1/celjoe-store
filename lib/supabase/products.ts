@@ -49,16 +49,10 @@ export type Product = {
   description: string | null;
   shortDescription: string | null;
   price: Money;
-  comparePrice: Money | null;
-  costPrice: Money | null;
-  sku: string | null;
-  barcode: string | null;
-  imageUrl: string | null;
   isAvailable: boolean;
   isFeatured: boolean;
   preparationTimeMinutes: number | null;
   stockQuantity: number;
-  lowStockThreshold: number;
   tags: string[];
   createdAt: string;
   updatedAt: string;
@@ -123,16 +117,10 @@ type DbProduct = {
   description: string | null;
   short_description: string | null;
   price: number;
-  compare_price: number | null;
-  cost_price: number | null;
-  sku: string | null;
-  barcode: string | null;
-  image_url: string | null;
   is_available: boolean;
   is_featured: boolean;
-  preparation_time_minutes: number | null;
+  preparation_minutes: number;
   stock_quantity: number;
-  low_stock_threshold: number;
   tags: string[] | null;
   created_at: string;
   updated_at: string;
@@ -211,16 +199,10 @@ const toProduct = (row: DbProduct, currencyCode = DEFAULT_CURRENCY_CODE): Produc
     description: row.description,
     shortDescription: row.short_description,
     price: money(row.price, currencyCode)!,
-    comparePrice: money(row.compare_price, currencyCode),
-    costPrice: money(row.cost_price, currencyCode),
-    sku: row.sku,
-    barcode: row.barcode,
-    imageUrl: row.image_url,
     isAvailable: row.is_available,
     isFeatured: row.is_featured,
-    preparationTimeMinutes: row.preparation_time_minutes,
+    preparationTimeMinutes: row.preparation_minutes,
     stockQuantity: row.stock_quantity,
-    lowStockThreshold: row.low_stock_threshold,
     tags: row.tags ?? [],
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -266,7 +248,7 @@ const applyPagination = (query: any, pagination?: Pagination) => {
 };
 
 const baseSelect =
-  "id,category_id,name,slug,description,short_description,price,compare_price,cost_price,sku,barcode,image_url,is_available,is_featured,preparation_time_minutes,stock_quantity,low_stock_threshold,tags,created_at,updated_at,category:categories(id,name,slug,parent_id),images:product_images(id,image_url,alt_text,display_order),variants:product_variants(id,name,price,stock_quantity,option_values)";
+  "id,category_id,name,slug,description,short_description,price,is_available,is_featured,preparation_minutes,stock_quantity,tags,created_at,updated_at,category:categories!products_category_fk(id,name,slug,parent_id),images:product_images(id,image_url,alt_text,display_order),variants:product_variants(id,name,price,stock_quantity,option_values)";
 
 export const getProducts = async (options?: {
   filters?: ProductFilters;

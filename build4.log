@@ -1,0 +1,52 @@
+﻿node.exe : $ next build
+At C:\Users\User\AppData\Roaming\npm\pnpm.ps1:24 char:5
++     & "node$exe"  "$basedir/node_modules/pnpm/bin/pnpm.mjs" $args
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ($ next build:String) [], RemoteEx 
+   ception
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[baseline-browser-mapping] The data in this module is over two months old.  To 
+ensure accurate Baseline data, please update: `npm i 
+baseline-browser-mapping@latest -D`
+   Γû▓ Next.js 15.6.0-canary.60 (Turbopack)
+   - Environments: .env.local
+   - Experiments (use with caution):
+     Γ£ô inlineCss
+     Γ£ô ppr
+     Γ£ô rdcForNavigations (enabled by `experimental.ppr`)
+     Γ£ô useCache
+
+ ΓÜá The "middleware" file convention is deprecated. Please use "proxy" 
+instead.
+   Creating an optimized production build ...
+[baseline-browser-mapping] The data in this module is over two months old.  To 
+ensure accurate Baseline data, please update: `npm i 
+baseline-browser-mapping@latest -D`
+ Γ£ô Compiled successfully in 38.5s
+   Running TypeScript ...
+Failed to compile.
+
+./app/admin/(protected)/cms/pages/manager.tsx:73:32
+Type error: Type '{ children: Element; label: string; required: true; }' is 
+not assignable to type 'IntrinsicAttributes & { label?: string | undefined; 
+hint?: string | undefined; error?: string | undefined; children: ReactNode; 
+className?: string | undefined; }'.
+  Property 'required' does not exist on type 'IntrinsicAttributes & { label?: 
+string | undefined; hint?: string | undefined; error?: string | undefined; 
+children: ReactNode; className?: string | undefined; }'.
+
+[0m [90m 71 |[39m         [33m<[39m[33m/[39m[33mh3[39m[33m>[39m
+ [90m 72 |[39m         [33m<[39m[33mdiv[39m 
+className[33m=[39m[32m"grid grid-cols-1 gap-[var(--ds-space-3)] 
+md:grid-cols-2"[39m[33m>[39m
+[31m[1m>[22m[39m[90m 73 |[39m           [33m<[39m[33mField[39m 
+label[33m=[39m[32m"Title"[39m required[33m>[39m
+ [90m    |[39m                                [31m[1m^[22m[39m
+ [90m 74 |[39m             [33m<[39m[33mTextInput[39m 
+name[33m=[39m[32m"title"[39m required [33m/[39m[33m>[39m
+ [90m 75 |[39m           [33m<[39m[33m/[39m[33mField[39m[33m>[39m
+ [90m 76 |[39m           [33m<[39m[33mField[39m 
+label[33m=[39m[32m"Slug"[39m required[33m>[39m[0m
+Next.js build worker exited with code: 1 and signal: null
+[ELIFECYCLE] Command failed with exit code 1.

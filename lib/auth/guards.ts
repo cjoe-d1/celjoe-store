@@ -1,60 +1,38 @@
-import { hasPermission, type Permission } from "lib/auth/permissions";
-import { isRole, type Role } from "lib/auth/roles";
-import { isAdminRole, type AdminRole, adminHasPermission } from "lib/auth/admin-roles";
-import type { AdminSession } from "lib/auth/session";
+import {
+  requireSession,
+  requireCustomerSession,
+  type AdminSession,
+  type CustomerSession,
+} from "lib/auth/session";
 
-export type GuardResult = { ok: true } | { ok: false; reason: "unauthenticated" | "forbidden" };
+/**
+ * Authentication Guards — Phase A
+ *
+ * Simplified to binary checks:
+ *  - Admin: full access
+ *  - Customer: own-data access
+ *
+ * No roles. No permissions. No hierarchies.
+ */
 
-const userHas = (role: AdminRole | Role, permission: Permission): boolean => {
-  if (isAdminRole(role)) return adminHasPermission(role, permission);
-  if (isRole(role)) return hasPermission(role, permission);
-  return false;
-};
-
-export const can = (session: AdminSession | null, permission: Permission): boolean => {
-  if (!session) return false;
-  return userHas(session.role, permission);
-};
-
-export const canAny = (
-  session: AdminSession | null,
-  permissions: readonly Permission[],
-): boolean => {
-  if (!session) return false;
-  return permissions.some((p) => userHas(session.role, p));
-};
-
-export const canAll = (
-  session: AdminSession | null,
-  permissions: readonly Permission[],
-): boolean => {
-  if (!session) return false;
-  return permissions.every((p) => userHas(session.role, p));
-};
-
-export const guard = (session: AdminSession | null, permission: Permission): GuardResult => {
-  if (!session) return { ok: false, reason: "unauthenticated" };
-  if (!userHas(session.role, permission))
-    return { ok: false, reason: "forbidden" };
-  return { ok: true };
-};
-
-export const guardAny = (
-  session: AdminSession | null,
-  permissions: readonly Permission[],
-): GuardResult => {
-  if (!session) return { ok: false, reason: "unauthenticated" };
-  const allowed = permissions.some((p) => userHas(session.role, p));
-  return allowed ? { ok: true } : { ok: false, reason: "forbidden" };
-};
-
-export const requirePermission = (
-  session: AdminSession | null,
-  permission: Permission,
-): void => {
-  const result = guard(session, permission);
-  if (!result.ok) {
-    if (result.reason === "unauthenticated") throw new Error("UNAUTHENTICATED");
+export const requireAdmin = async (): Promise<AdminSession> => {
+  const session = await requireSession();
+  if (!session) {
     throw new Error("FORBIDDEN");
   }
+  return session;
 };
+
+export const requireCustomer = async (): Promise<CustomerSession> => {
+  return requireCustomerSession();
+};
+
+/**
+ * @deprecated Phase A: every authenticated admin has full access.
+ * Kept temporarily to minimise churn across page files during the
+ * authentication refactor. Will be removed once callers are migrated.
+ */
+export const can = (_session: AdminSession | null): boolean => Boolean(_session);
+
+export const canAny = (session: AdminSession | null): boolean => Boolean(session);
+export const canAll = (session: AdminSession | null): boolean => Boolean(session);

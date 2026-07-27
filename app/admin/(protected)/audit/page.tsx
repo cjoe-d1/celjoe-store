@@ -4,8 +4,7 @@ import { Label, Field, TextInput, Button } from "components/chds";
 import { FilterRow } from "components/chds/table";
 import { AdminTable, EmptyTable } from "components/chds/table";
 import { listAuditLogs } from "lib/supabase/admin/audit";
-import { getCurrentSession } from "lib/auth/session";
-import { requirePermission } from "lib/auth/guards";
+import { requireAdmin } from "lib/auth/guards";
 
 export const dynamic = "force-dynamic";
 
@@ -24,9 +23,7 @@ type SearchParams = Promise<{
 }>;
 
 export default async function AdminAuditPage(props: { searchParams: SearchParams }) {
-  const session = await getCurrentSession();
-  if (!session) return null;
-  requirePermission(session, "settings:read");
+  await requireAdmin();
   const sp = await props.searchParams;
   const page = Number(sp.page ?? "1") || 1;
   const result = await listAuditLogs({

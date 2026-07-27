@@ -1,63 +1,82 @@
 import Link from "next/link";
 import { buildMetadata } from "lib/seo";
 import { AdminPageContainer, AdminTopBar } from "components/chds/admin";
-import { Card, Label, Button } from "components/chds";
-import { getCurrentSession } from "lib/auth/session";
-import { requirePermission } from "lib/auth/guards";
+import { Card, Label } from "components/chds";
+import { requireAdmin } from "lib/auth/guards";
 
 export const dynamic = "force-dynamic";
 
 export const metadata = buildMetadata({
-  title: "Content",
-  description: "Manage homepage, marketing, and editorial content.",
+  title: "CMS",
+  description: "Editorial content management.",
   path: "/admin/cms",
   noIndex: true,
 });
 
-const SECTIONS = [
-  { title: "Homepage", href: "/admin/cms/homepage", description: "Hero, sections, ordering, and visibility." },
-  { title: "Kitchen", href: "/admin/cms/kitchen", description: "Editorial dining copy and curation." },
-  { title: "Smokehouse", href: "/admin/cms/smokehouse", description: "BBQ storytelling, photography, and weekend specials." },
-  { title: "Catering", href: "/admin/cms/catering", description: "Packages, event categories, and copy." },
-  { title: "Our Story", href: "/admin/cms/our-story", description: "Story, philosophy, timeline." },
-  { title: "Testimonials", href: "/admin/cms/testimonials", description: "Guest stories across the site." },
-  { title: "Pages", href: "/admin/cms/pages", description: "Custom CMS pages and routing." },
-  { title: "Navigation", href: "/admin/cms/navigation", description: "Top navigation and footer ordering." },
-  { title: "Promotions", href: "/admin/cms/promotions", description: "Active announcements and promos." },
-];
+const SURFACES = [
+  { slug: "homepage", label: "Homepage", description: "Hero, sections, ordering." },
+  { slug: "kitchen", label: "Kitchen", description: "Editorial menu and stories." },
+  { slug: "smokehouse", label: "Smokehouse", description: "BBQ editorial." },
+  { slug: "catering", label: "Catering", description: "Service-led content." },
+  { slug: "our-story", label: "Our story", description: "Brand story." },
+] as const;
 
-export default async function AdminCmsIndexPage() {
-  const session = await getCurrentSession();
-  if (!session) return null;
-  requirePermission(session, "cms:read");
+const SUB_PAGES = [
+  { slug: "testimonials", label: "Testimonials", description: "Guest stories." },
+  { slug: "navigation", label: "Navigation", description: "Header and footer." },
+  { slug: "promotions", label: "Promotions", description: "Discount codes and offers." },
+  { slug: "pages", label: "Pages", description: "Static pages." },
+] as const;
+
+export default async function AdminCmsPage() {
+  await requireAdmin();
 
   return (
     <>
       <AdminTopBar
-        title="Content"
-        description="Every customer-facing surface is editable from here."
-        actions={
-          <Button asChild variant="primary">
-            <Link href="/admin/cms/homepage">Edit homepage</Link>
-          </Button>
-        }
+        title="Content & CMS"
+        description="Edit surfaces, navigation, testimonials, promotions, and pages."
       />
       <AdminPageContainer>
-        <div className="grid grid-cols-1 gap-[var(--ds-space-4)] sm:grid-cols-2 lg:grid-cols-3">
-          {SECTIONS.map((s) => (
-            <Card key={s.href} variant="cms" className="flex flex-col gap-[var(--ds-space-3)]">
-              <Label tone="muted">{s.title}</Label>
-              <p className="text-[length:var(--ds-text-body)] text-[var(--ds-color-fg)]">
-                {s.description}
-              </p>
-              <div className="mt-auto">
-                <Button asChild variant="outline" size="sm">
-                  <Link href={s.href}>Open</Link>
-                </Button>
-              </div>
-            </Card>
-          ))}
-        </div>
+        <Card variant="dashboard">
+          <Label tone="muted">Surfaces</Label>
+          <div className="mt-[var(--ds-space-3)] grid grid-cols-1 gap-[var(--ds-space-3)] md:grid-cols-2">
+            {SURFACES.map((s) => (
+              <Link
+                key={s.slug}
+                href={`/admin/cms/${s.slug}`}
+                className="block rounded-[var(--ds-radius-md)] border border-[var(--ds-color-border)] p-[var(--ds-space-4)] transition-colors hover:border-[var(--ds-color-accent)]"
+              >
+                <div className="text-[length:var(--ds-text-h4)] font-[var(--ds-font-weight-medium)] text-[var(--ds-color-fg)]">
+                  {s.label}
+                </div>
+                <div className="text-[length:var(--ds-text-caption)] text-[var(--ds-color-muted)]">
+                  {s.description}
+                </div>
+              </Link>
+            ))}
+          </div>
+        </Card>
+
+        <Card variant="dashboard">
+          <Label tone="muted">Site content</Label>
+          <div className="mt-[var(--ds-space-3)] grid grid-cols-1 gap-[var(--ds-space-3)] md:grid-cols-2">
+            {SUB_PAGES.map((s) => (
+              <Link
+                key={s.slug}
+                href={`/admin/cms/${s.slug}`}
+                className="block rounded-[var(--ds-radius-md)] border border-[var(--ds-color-border)] p-[var(--ds-space-4)] transition-colors hover:border-[var(--ds-color-accent)]"
+              >
+                <div className="text-[length:var(--ds-text-h4)] font-[var(--ds-font-weight-medium)] text-[var(--ds-color-fg)]">
+                  {s.label}
+                </div>
+                <div className="text-[length:var(--ds-text-caption)] text-[var(--ds-color-muted)]">
+                  {s.description}
+                </div>
+              </Link>
+            ))}
+          </div>
+        </Card>
       </AdminPageContainer>
     </>
   );

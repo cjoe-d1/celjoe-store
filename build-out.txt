@@ -1,0 +1,42 @@
+﻿node.exe : [baseline-browser-mapping] The data in this module is over two 
+months old.  To ensure accurate Baseline data, please update: `npm i 
+baseline-browser-mapping@latest -D`
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([baseline-brows...ping@latest -D` 
+   :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+   Γû▓ Next.js 15.6.0-canary.60 (Turbopack)
+   - Environments: .env.local
+   - Experiments (use with caution):
+     Γ£ô inlineCss
+     Γ£ô ppr
+     Γ£ô rdcForNavigations (enabled by `experimental.ppr`)
+     Γ£ô useCache
+
+ ΓÜá The "middleware" file convention is deprecated. Please use "proxy" 
+instead.
+   Creating an optimized production build ...
+[baseline-browser-mapping] The data in this module is over two months old.  To 
+ensure accurate Baseline data, please update: `npm i 
+baseline-browser-mapping@latest -D`
+ Γ£ô Compiled successfully in 20.7s
+   Running TypeScript ...
+Failed to compile.
+
+./lib/supabase/admin.ts:47:6
+Type error: Property 'catch' does not exist on type 'PromiseLike<void>'.
+
+[0m [90m 45 |[39m       console[33m.[39mlog([32m"[ADMIN DIAG] RPC 
+version:"[39m[33m,[39m data[33m,[39m error)[33m;[39m
+ [90m 46 |[39m     })
+[31m[1m>[22m[39m[90m 47 |[39m     
+[33m.[39m[36mcatch[39m((e[33m:[39m unknown) [33m=>[39m {
+ [90m    |[39m      [31m[1m^[22m[39m
+ [90m 48 |[39m       console[33m.[39merror([32m"[ADMIN DIAG] RPC version 
+FAILED:"[39m[33m,[39m e)[33m;[39m
+ [90m 49 |[39m     })[33m;[39m
+ [90m 50 |[39m[0m
+Next.js build worker exited with code: 1 and signal: null

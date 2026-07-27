@@ -25,6 +25,7 @@ export type Ingredient = {
   unit: string;
   stock: number;
   lowStockThreshold: number;
+  costPerUnit: number;
   supplier: string | null;
   expiry: string | null;
 };
@@ -91,6 +92,7 @@ export async function listIngredients(): Promise<Ingredient[]> {
       unit: String(d.unit ?? "unit"),
       stock: Number(d.stock ?? 0),
       lowStockThreshold: Number(d.low_stock_threshold ?? 0),
+      costPerUnit: Number(d.cost_per_unit ?? 0),
       supplier: (d.supplier as string | null) ?? null,
       expiry: (d.expiry as string | null) ?? null,
     }));

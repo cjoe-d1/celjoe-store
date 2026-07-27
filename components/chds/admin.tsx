@@ -179,16 +179,12 @@ export function StatusPill({
       "border-[var(--ds-color-accent)]/40 bg-[var(--ds-color-accent)]/15 text-[var(--ds-color-fg)]",
     ready:
       "border-[var(--ds-color-success)]/40 bg-[var(--ds-color-success)]/15 text-[var(--ds-color-fg)]",
-    out_for_delivery:
-      "border-[var(--ds-color-accent)]/40 bg-[var(--ds-color-accent)]/15 text-[var(--ds-color-fg)]",
-    delivered:
+    completed:
       "border-[var(--ds-color-success)]/40 bg-[var(--ds-color-success)]/15 text-[var(--ds-color-fg)]",
     cancelled:
       "border-[var(--ds-color-danger)]/40 bg-[var(--ds-color-danger)]/15 text-[var(--ds-color-fg)]",
     available:
       "border-[var(--ds-color-success)]/40 bg-[var(--ds-color-success)]/15 text-[var(--ds-color-fg)]",
-    on_delivery:
-      "border-[var(--ds-color-accent)]/40 bg-[var(--ds-color-accent)]/15 text-[var(--ds-color-fg)]",
     offline:
       "border-[var(--ds-color-border)] bg-[var(--ds-color-surface-muted)] text-[var(--ds-color-muted)]",
   };

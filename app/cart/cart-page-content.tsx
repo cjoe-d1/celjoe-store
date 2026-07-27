@@ -13,7 +13,6 @@ import {
   Stack,
 } from "components/chds";
 import Link from "next/link";
-import { removeItem, updateItemQuantity } from "components/cart/actions";
 import { useState } from "react";
 
 export default function CartPageContent() {
@@ -76,29 +75,17 @@ export default function CartPageContent() {
               key={item.id}
               item={item}
               onDecrease={() => {
+                const variantId = (item as any).rawLine.variant?.id ?? "";
                 const newQuantity = item.quantity - 1;
-                if (newQuantity === 0) {
-                  updateCartItem((item as any).rawLine.variant?.id ?? "", "delete");
-                  removeItem(null, (item as any).rawLine.variant?.id ?? "");
-                } else {
-                  updateCartItem((item as any).rawLine.variant?.id ?? "", "minus");
-                  updateItemQuantity(null, {
-                    variantId: (item as any).rawLine.variant?.id ?? "",
-                    quantity: newQuantity,
-                  });
-                }
+                updateCartItem(variantId, newQuantity === 0 ? "delete" : "minus");
               }}
               onIncrease={() => {
-                const newQuantity = item.quantity + 1;
-                updateCartItem((item as any).rawLine.variant?.id ?? "", "plus");
-                updateItemQuantity(null, {
-                  variantId: (item as any).rawLine.variant?.id ?? "",
-                  quantity: newQuantity,
-                });
+                const variantId = (item as any).rawLine.variant?.id ?? "";
+                updateCartItem(variantId, "plus");
               }}
               onRemove={() => {
-                updateCartItem((item as any).rawLine.variant?.id ?? "", "delete");
-                removeItem(null, (item as any).rawLine.variant?.id ?? "");
+                const variantId = (item as any).rawLine.variant?.id ?? "";
+                updateCartItem(variantId, "delete");
               }}
             />
           ))}

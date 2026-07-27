@@ -9,6 +9,10 @@ export type AdminCustomer = {
   ordersCount: number;
   totalSpend: { amount: string; currencyCode: string };
   loyaltyTier: "guest" | "regular" | "devoted" | "ambassador";
+  isVip: boolean;
+  isBlacklisted: boolean;
+  marketingConsent: boolean;
+  tags: string[];
   preferences: {
     diet: string[];
     allergens: string[];
@@ -18,18 +22,29 @@ export type AdminCustomer = {
 const isMissingTable = (code: string | undefined): boolean =>
   code === "PGRST205" || code === "42P01" || code === "PGRST116";
 
-export async function listAdminCustomers(): Promise<AdminCustomer[]> {
+export async function listAdminCustomers(
+  params: { search?: string } = {},
+): Promise<{ customers: AdminCustomer[] }> {
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from("customers")
       .select("*")
       .order("created_at", { ascending: false })
       .limit(200);
+
+    const search = params.search?.trim();
+    if (search) {
+      const escaped = search.replace(/[%_]/g, (m) => `\\${m}`);
+      const like = `%${escaped}%`;
+      query = query.or(`full_name.ilike.${like},email.ilike.${like}`);
+    }
+
+    const { data, error } = await query;
     if (error) {
-      if (isMissingTable(error.code)) return [];
+      if (isMissingTable(error.code)) return { customers: [] };
       throw error;
     }
-    return (data ?? []).map((c: Record<string, unknown>) => {
+    const customers = (data ?? []).map((c: Record<string, unknown>) => {
       const ordersCount = (c.orders_count as number | undefined) ?? 0;
       const totalAmount = (c.total_spend as string | undefined) ?? "0.00";
       let tier: AdminCustomer["loyaltyTier"] = "guest";
@@ -45,14 +60,19 @@ export async function listAdminCustomers(): Promise<AdminCustomer[]> {
         ordersCount,
         totalSpend: { amount: totalAmount, currencyCode: "NGN" },
         loyaltyTier: tier,
+        isVip: Boolean(c.is_vip ?? false),
+        isBlacklisted: Boolean(c.is_blacklisted ?? false),
+        marketingConsent: Boolean(c.marketing_consent ?? false),
+        tags: ((c.tags as string[] | undefined) ?? []),
         preferences: {
           diet: ((c.diet as string[] | undefined) ?? []),
           allergens: ((c.allergens as string[] | undefined) ?? []),
         },
       };
     });
+    return { customers };
   } catch {
-    return [];
+    return { customers: [] };
   }
 }
 
@@ -82,6 +102,10 @@ export async function getAdminCustomerById(id: string): Promise<AdminCustomer | 
         currencyCode: "NGN",
       },
       loyaltyTier: ordersCount >= 20 ? "devoted" : ordersCount >= 5 ? "regular" : "guest",
+      isVip: Boolean(c.is_vip ?? false),
+      isBlacklisted: Boolean(c.is_blacklisted ?? false),
+      marketingConsent: Boolean(c.marketing_consent ?? false),
+      tags: ((c.tags as string[] | undefined) ?? []),
       preferences: {
         diet: ((c.diet as string[] | undefined) ?? []),
         allergens: ((c.allergens as string[] | undefined) ?? []),

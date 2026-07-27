@@ -115,7 +115,7 @@ export const getCart = async (): Promise<Cart | null> => {
   const { data, error } = await supabase
     .from("carts")
     .select(
-      "id, token, cart_items:cart_items(id, quantity, variant:product_variants(id, name, price, option_values, product:products(id, slug, name, image_url)))",
+      "id, token, cart_items:cart_items(id, quantity, variant:product_variants(id, name, price, option_values, product:products(id, slug, name, images:product_images(id, image_url, display_order))))",
     )
     .eq("token", token)
     .limit(1)
@@ -141,7 +141,7 @@ export const getCart = async (): Promise<Cart | null> => {
           id: product.id,
           slug: product.slug,
           name: product.name,
-          imageUrl: product.image_url ?? null,
+          imageUrl: product.images?.[0]?.image_url ?? null,
           imageAltText: null,
         },
         variant: variant

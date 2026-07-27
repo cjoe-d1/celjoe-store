@@ -31,4 +31,6 @@ export const requireEnv = {
   supabaseUrl: () => getRequiredAny(["NEXT_PUBLIC_SUPABASE_URL", "SUPABASE_URL"]),
   supabaseAnonKey: () =>
     getRequiredAny(["NEXT_PUBLIC_SUPABASE_ANON_KEY", "SUPABASE_ANON_KEY"]),
+  supabaseServiceRoleKey: () =>
+    getRequiredAny(["SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_SERVICE_KEY"]),
 };

@@ -144,29 +144,3 @@ export async function updateOrderStatus(
     return { ok: false, error: err instanceof Error ? err.message : "Update failed." };
   }
 }
-
-export async function assignRiderToOrder(
-  orderId: string,
-  riderId: string,
-  riderName: string,
-): Promise<{ ok: boolean; error?: string }> {
-  try {
-    const { error } = await supabase
-      .from("orders")
-      .update({
-        assigned_rider_id: riderId,
-        assigned_rider_name: riderName,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", orderId);
-    if (error) {
-      if (isMissingTable(error.code)) {
-        return { ok: false, error: "Orders table unavailable." };
-      }
-      return { ok: false, error: error.message };
-    }
-    return { ok: true };
-  } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Assignment failed." };
-  }
-}

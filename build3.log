@@ -1,0 +1,48 @@
+﻿node.exe : $ next build
+At C:\Users\User\AppData\Roaming\npm\pnpm.ps1:24 char:5
++     & "node$exe"  "$basedir/node_modules/pnpm/bin/pnpm.mjs" $args
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ($ next build:String) [], RemoteEx 
+   ception
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[baseline-browser-mapping] The data in this module is over two months old.  To 
+ensure accurate Baseline data, please update: `npm i 
+baseline-browser-mapping@latest -D`
+   Γû▓ Next.js 15.6.0-canary.60 (Turbopack)
+   - Environments: .env.local
+   - Experiments (use with caution):
+     Γ£ô inlineCss
+     Γ£ô ppr
+     Γ£ô rdcForNavigations (enabled by `experimental.ppr`)
+     Γ£ô useCache
+
+ ΓÜá The "middleware" file convention is deprecated. Please use "proxy" 
+instead.
+   Creating an optimized production build ...
+[baseline-browser-mapping] The data in this module is over two months old.  To 
+ensure accurate Baseline data, please update: `npm i 
+baseline-browser-mapping@latest -D`
+ Γ£ô Compiled successfully in 42s
+   Running TypeScript ...
+Failed to compile.
+
+./app/admin/(protected)/cms/navigation/manager.tsx:31:8
+Type error: Type 'Item | undefined' is not assignable to type 'Item'.
+  Type 'undefined' is not assignable to type 'Item'.
+
+[0m [90m 29 |[39m       [36mconst[39m target [33m=[39m i [33m+[39m 
+dir[33m;[39m
+ [90m 30 |[39m       [36mif[39m (target [33m<[39m [35m0[39m 
+[33m||[39m target [33m>=[39m next[33m.[39mlength) [36mreturn[39m 
+arr[33m;[39m
+[31m[1m>[22m[39m[90m 31 |[39m       [next[i][33m,[39m next[target]] 
+[33m=[39m [next[target][33m,[39m next[i]][33m;[39m
+ [90m    |[39m        [31m[1m^[22m[39m
+ [90m 32 |[39m       [36mreturn[39m next[33m.[39mmap((it[33m,[39m idx) 
+[33m=>[39m ({ [33m...[39mit[33m,[39m position[33m:[39m idx 
+}))[33m;[39m
+ [90m 33 |[39m     })[33m;[39m
+ [90m 34 |[39m   }[33m;[39m[0m
+Next.js build worker exited with code: 1 and signal: null
+[ELIFECYCLE] Command failed with exit code 1.

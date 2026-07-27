@@ -1,5 +1,5 @@
 import { supabase } from "lib/supabase/client";
-import type { AdminSession } from "lib/auth/session";
+import type { AdminSession, CustomerSession } from "lib/auth/session";
 
 export type AuditEvent = {
   actorId: string | null;
@@ -42,7 +42,27 @@ export const auditFromSession = (
 ): AuditEvent => ({
   actorId: session?.userId ?? null,
   actorEmail: session?.email ?? null,
-  actorRole: session?.role ?? null,
+  actorRole: session ? "admin" : null,
+  action,
+  resource,
+  resourceId,
+  metadata,
+  ip,
+  userAgent,
+});
+
+export const auditFromCustomerSession = (
+  session: CustomerSession | null,
+  action: string,
+  resource: string,
+  resourceId: string | null,
+  metadata: Record<string, unknown> | null = null,
+  ip: string | null = null,
+  userAgent: string | null = null,
+): AuditEvent => ({
+  actorId: session?.userId ?? null,
+  actorEmail: session?.email ?? null,
+  actorRole: session ? "customer" : null,
   action,
   resource,
   resourceId,

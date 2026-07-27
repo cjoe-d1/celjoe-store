@@ -4,11 +4,12 @@ import type { Cart, CartItem, Money } from "lib/supabase/cart";
 import type { Product, ProductVariant } from "lib/supabase/products";
 import React, {
   createContext,
+  startTransition,
   use,
   useContext,
-  useMemo,
   useOptimistic,
 } from "react";
+import { removeItem, updateItemQuantity } from "./actions";
 
 type UpdateType = "plus" | "minus" | "delete";
 
@@ -70,7 +71,7 @@ function createOrUpdateCartItem(
       id: product.id,
       slug: product.slug,
       name: product.name,
-      imageUrl: product.imageUrl ?? null,
+      imageUrl: product.images[0]?.url ?? null,
       imageAltText: product.images[0]?.altText ?? product.name,
     },
     variant: {
@@ -200,22 +201,40 @@ export function useCart() {
   );
 
   const updateCartItem = (variantId: string, updateType: UpdateType) => {
-    updateOptimisticCart({
-      type: "UPDATE_ITEM",
-      payload: { variantId, updateType },
+    const currentItem = optimisticCart?.items.find(
+      (i) => i.variant?.id === variantId,
+    );
+
+    startTransition(() => {
+      updateOptimisticCart({
+        type: "UPDATE_ITEM",
+        payload: { variantId, updateType },
+      });
+
+      if (updateType === "delete") {
+        removeItem(null, variantId);
+      } else {
+        const currentQty = currentItem?.quantity ?? 0;
+        const newQty =
+          updateType === "plus" ? currentQty + 1 : currentQty - 1;
+        if (newQty <= 0) {
+          removeItem(null, variantId);
+        } else {
+          updateItemQuantity(null, { variantId, quantity: newQty });
+        }
+      }
     });
   };
 
   const addCartItem = (variant: ProductVariant, product: Product) => {
-    updateOptimisticCart({ type: "ADD_ITEM", payload: { variant, product } });
+    startTransition(() => {
+      updateOptimisticCart({ type: "ADD_ITEM", payload: { variant, product } });
+    });
   };
 
-  return useMemo(
-    () => ({
-      cart: optimisticCart,
-      updateCartItem,
-      addCartItem,
-    }),
-    [optimisticCart],
-  );
+  return {
+    cart: optimisticCart,
+    updateCartItem,
+    addCartItem,
+  };
 }

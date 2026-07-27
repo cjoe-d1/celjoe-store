@@ -13,8 +13,7 @@ import {
 } from "components/chds/navigation";
 import { listAdminOrders } from "lib/supabase/admin/orders";
 import { formatMoney } from "lib/supabase/orders";
-import { getCurrentSession } from "lib/auth/session";
-import { requirePermission } from "lib/auth/guards";
+import { requireAdmin } from "lib/auth/guards";
 import { Suspense } from "react";
 
 export const dynamic = "force-dynamic";
@@ -32,8 +31,7 @@ const STATUSES = [
   "confirmed",
   "preparing",
   "ready",
-  "out_for_delivery",
-  "delivered",
+  "completed",
   "cancelled",
 ] as const;
 
@@ -46,9 +44,7 @@ type SearchParams = Promise<{
 export default async function AdminOrdersPage(props: {
   searchParams: SearchParams;
 }) {
-  const session = await getCurrentSession();
-  if (!session) return null;
-  requirePermission(session, "orders:read");
+  await requireAdmin();
   const sp = await props.searchParams;
   const status = (STATUSES as readonly string[]).includes(sp.status ?? "")
     ? (sp.status as (typeof STATUSES)[number])
@@ -102,7 +98,7 @@ export default async function AdminOrdersPage(props: {
             Mark as preparing
           </Button>
           <Button variant="outline" disabled>
-            Assign rider
+            Mark as completed
           </Button>
           <Button variant="outline" disabled>
             Export CSV
@@ -132,8 +128,7 @@ async function OrdersList({
       | "confirmed"
       | "preparing"
       | "ready"
-      | "out_for_delivery"
-      | "delivered"
+      | "completed"
       | "cancelled"
       | "all",
     search: q,
@@ -164,7 +159,6 @@ async function OrdersList({
               <th className="px-[var(--ds-space-4)] py-[var(--ds-space-3)]">Order</th>
               <th className="px-[var(--ds-space-4)] py-[var(--ds-space-3)]">Customer</th>
               <th className="px-[var(--ds-space-4)] py-[var(--ds-space-3)]">Status</th>
-              <th className="px-[var(--ds-space-4)] py-[var(--ds-space-3)]">Rider</th>
               <th className="px-[var(--ds-space-4)] py-[var(--ds-space-3)] text-right">Total</th>
               <th className="px-[var(--ds-space-4)] py-[var(--ds-space-3)] text-right">Actions</th>
             </tr>
@@ -191,11 +185,6 @@ async function OrdersList({
                 </td>
                 <td className="px-[var(--ds-space-4)] py-[var(--ds-space-3)]">
                   <StatusPill status={o.orderStatus} />
-                </td>
-                <td className="px-[var(--ds-space-4)] py-[var(--ds-space-3)]">
-                  <span className="text-[var(--ds-color-fg)]">
-                    {o.assignedRiderName ?? "—"}
-                  </span>
                 </td>
                 <td className="px-[var(--ds-space-4)] py-[var(--ds-space-3)] text-right text-[var(--ds-color-fg)]">
                   {formatMoney(o.total)}

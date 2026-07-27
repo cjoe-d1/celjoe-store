@@ -56,7 +56,7 @@ export default async function CategoryPage(props: {
                 name: product.name,
                 slug: product.slug,
                 shortDescription: product.shortDescription,
-                imageUrl: product.imageUrl ?? product.images[0]?.url ?? null,
+                imageUrl: product.images[0]?.url ?? null,
                 imageAlt: product.images[0]?.altText ?? product.name,
                 price: product.price,
                 isAvailable: product.isAvailable,

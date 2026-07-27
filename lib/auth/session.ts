@@ -1,18 +1,32 @@
 import { cookies, headers } from "next/headers";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { requireEnv } from "config/env";
-import { isAdminRole, type AdminRole } from "lib/auth/admin-roles";
+
+/**
+ * Session management — Phase A
+ *
+ * Two session types:
+ *  - AdminSession: full operational access (server-side cookie)
+ *  - CustomerSession: own-data access (Supabase SSR cookie)
+ *
+ * No role hierarchy. No permission system.
+ */
 
 export type AdminSession = {
   userId: string;
   email: string;
   fullName: string;
-  role: AdminRole;
   isActive: boolean;
 };
 
-const SESSION_COOKIE = "celjoe_session";
-const SESSION_MAX_AGE = 60 * 60 * 8; // 8 hours
+export type CustomerSession = {
+  userId: string;
+  email: string;
+  fullName: string;
+};
+
+const ADMIN_SESSION_COOKIE = "celjoe_session";
+const ADMIN_SESSION_MAX_AGE = 60 * 60 * 8; // 8 hours
 
 type SupabaseSessionUser = {
   id: string;
@@ -57,19 +71,17 @@ const getSupabaseServerClient = async () => {
 
 const readCookieSession = async (): Promise<AdminSession | null> => {
   const cookieStore = await cookies();
-  const raw = cookieStore.get(SESSION_COOKIE)?.value;
+  const raw = cookieStore.get(ADMIN_SESSION_COOKIE)?.value;
   if (!raw) return null;
   try {
     const parsed = JSON.parse(
       Buffer.from(raw, "base64").toString("utf-8"),
     ) as Partial<AdminSession>;
-    if (!parsed.userId || !parsed.email || !parsed.role) return null;
-    if (!isAdminRole(parsed.role)) return null;
+    if (!parsed.userId || !parsed.email) return null;
     return {
       userId: parsed.userId,
       email: parsed.email,
-      fullName: parsed.fullName ?? "Staff",
-      role: parsed.role,
+      fullName: parsed.fullName ?? "Admin",
       isActive: parsed.isActive ?? true,
     };
   } catch {
@@ -81,20 +93,20 @@ const writeCookieSession = async (session: AdminSession) => {
   const cookieStore = await cookies();
   const encoded = Buffer.from(JSON.stringify(session)).toString("base64");
   cookieStore.set({
-    name: SESSION_COOKIE,
+    name: ADMIN_SESSION_COOKIE,
     value: encoded,
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
     path: "/",
-    maxAge: SESSION_MAX_AGE,
+    maxAge: ADMIN_SESSION_MAX_AGE,
   });
 };
 
 const clearCookieSession = async () => {
   const cookieStore = await cookies();
   cookieStore.set({
-    name: SESSION_COOKIE,
+    name: ADMIN_SESSION_COOKIE,
     value: "",
     httpOnly: true,
     sameSite: "lax",
@@ -105,36 +117,11 @@ const clearCookieSession = async () => {
 };
 
 export async function getCurrentSession(): Promise<AdminSession | null> {
-  const cookieSession = await readCookieSession();
-  if (cookieSession) return cookieSession;
-
-  try {
-    const supabase = await getSupabaseServerClient();
-    const result = (await supabase.auth.getSession()) as SupabaseSessionResponse;
-    if (result.error || !result.data.session) return null;
-
-    const user = result.data.session.user;
-    const roleMeta =
-      (user.app_metadata?.role as string | undefined) ??
-      (user.user_metadata?.role as string | undefined) ??
-      "customer_service";
-
-    if (!isAdminRole(roleMeta)) return null;
-
-    const session: AdminSession = {
-      userId: user.id,
-      email: user.email ?? "staff@celjoe.store",
-      fullName:
-        (user.user_metadata?.full_name as string | undefined) ?? "Staff",
-      role: roleMeta,
-      isActive: true,
-    };
-
-    await writeCookieSession(session);
-    return session;
-  } catch {
-    return null;
-  }
+  // Admin session is read exclusively from the celjoe_session cookie.
+  // We do NOT fall back to a Supabase auth session: that would let any
+  // Supabase user (including customers who registered via /account/register)
+  // be treated as an admin, which is a privilege-escalation bug.
+  return readCookieSession();
 }
 
 export async function requireSession(): Promise<AdminSession> {
@@ -145,13 +132,38 @@ export async function requireSession(): Promise<AdminSession> {
   return session;
 }
 
-export async function requireRole(
-  roles: AdminRole | readonly AdminRole[],
-): Promise<AdminSession> {
-  const session = await requireSession();
-  const allowed = Array.isArray(roles) ? roles : [roles];
-  if (!allowed.includes(session.role)) {
-    throw new Error("FORBIDDEN");
+/**
+ * Customer session is sourced directly from the Supabase SSR cookie.
+ * The Supabase client is the source of truth for customer auth.
+ */
+export async function getCurrentCustomerSession(): Promise<CustomerSession | null> {
+  // Hard separation: an authenticated admin (celjoe_session cookie) is
+  // never a customer, even if a Supabase auth session is present.
+  const adminCookie = await readCookieSession();
+  if (adminCookie) return null;
+
+  try {
+    const supabase = await getSupabaseServerClient();
+    const result = (await supabase.auth.getSession()) as SupabaseSessionResponse;
+    if (result.error || !result.data.session) return null;
+    const user = result.data.session.user;
+    return {
+      userId: user.id,
+      email: user.email ?? "",
+      fullName:
+        (user.user_metadata?.full_name as string | undefined) ??
+        (user.user_metadata?.first_name as string | undefined) ??
+        "Customer",
+    };
+  } catch {
+    return null;
+  }
+}
+
+export async function requireCustomerSession(): Promise<CustomerSession> {
+  const session = await getCurrentCustomerSession();
+  if (!session) {
+    throw new Error("UNAUTHENTICATED");
   }
   return session;
 }
@@ -167,5 +179,5 @@ export async function getClientMetadata(): Promise<{
   return { ip, userAgent };
 }
 
-export const sessionCookieName = SESSION_COOKIE;
+export const sessionCookieName = ADMIN_SESSION_COOKIE;
 export { writeCookieSession, clearCookieSession };

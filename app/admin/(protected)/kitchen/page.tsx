@@ -3,31 +3,29 @@ import { buildMetadata } from "lib/seo";
 import {
   AdminPageContainer,
   AdminTopBar,
-  StatusPill,
 } from "components/chds/admin";
-import { Card, Label, Button } from "components/chds";
+import { Button, Card, Label } from "components/chds";
 import { listAdminOrders } from "lib/supabase/admin/orders";
-import { getCurrentSession } from "lib/auth/session";
-import { requirePermission } from "lib/auth/guards";
+import { requireAdmin } from "lib/auth/guards";
+import { formatMoney } from "lib/supabase/orders";
+import { KitchenTicketCard } from "./ticket-card";
 
 export const dynamic = "force-dynamic";
 
 export const metadata = buildMetadata({
   title: "Kitchen display",
-  description: "Live ticket queue for the kitchen.",
+  description: "Live ticket queue for the kitchen and Smokehouse.",
   path: "/admin/kitchen",
   noIndex: true,
 });
 
 export default async function AdminKitchenPage() {
-  const session = await getCurrentSession();
-  if (!session) return null;
-  requirePermission(session, "kitchen:read");
+  await requireAdmin();
 
   const [queue, ready, completed] = await Promise.all([
     listAdminOrders({ status: "preparing", pageSize: 12 }),
     listAdminOrders({ status: "ready", pageSize: 12 }),
-    listAdminOrders({ status: "delivered", pageSize: 8 }),
+    listAdminOrders({ status: "completed", pageSize: 8 }),
   ]);
 
   return (
@@ -43,9 +41,9 @@ export default async function AdminKitchenPage() {
       />
       <AdminPageContainer>
         <div className="grid grid-cols-1 gap-[var(--ds-space-4)] lg:grid-cols-3">
-          <Section title="Preparing" orders={queue.orders} tone="preparing" />
-          <Section title="Ready" orders={ready.orders} tone="ready" />
-          <Section title="Recently delivered" orders={completed.orders} tone="delivered" />
+          <Section title="Preparing" tone="preparing" orders={queue.orders} />
+          <Section title="Ready" tone="ready" orders={ready.orders} />
+          <Section title="Recently completed" tone="completed" orders={completed.orders} />
         </div>
       </AdminPageContainer>
     </>
@@ -59,7 +57,7 @@ function Section({
 }: {
   title: string;
   orders: Awaited<ReturnType<typeof listAdminOrders>>["orders"];
-  tone: "preparing" | "ready" | "delivered";
+  tone: "preparing" | "ready" | "completed";
 }) {
   return (
     <div>
@@ -76,36 +74,12 @@ function Section({
           </Card>
         ) : (
           orders.map((order) => (
-            <Card key={order.id} variant="order" className="flex flex-col gap-[var(--ds-space-2)]">
-              <div className="flex items-center justify-between">
-                <Link
-                  href={`/admin/orders/${order.id}`}
-                  className="text-[length:var(--ds-text-h4)] font-[var(--ds-font-weight-medium)] text-[var(--ds-color-fg)] hover:text-[var(--ds-color-accent)]"
-                >
-                  {order.orderNumber}
-                </Link>
-                <StatusPill status={tone} />
-              </div>
-              <div className="text-[length:var(--ds-text-caption)] text-[var(--ds-color-muted)]">
-                {order.customerName} · {new Date(order.createdAt).toLocaleTimeString("en-NG")}
-              </div>
-              <ul className="mt-[var(--ds-space-2)] flex flex-col gap-[var(--ds-space-1)] text-[length:var(--ds-text-caption)] text-[var(--ds-color-fg)]">
-                {(order.items ?? []).slice(0, 6).map((line) => (
-                  <li key={line.id} className="flex items-center justify-between">
-                    <span>
-                      {line.productName}
-                      {line.variantName ? ` (${line.variantName})` : ""}
-                    </span>
-                    <span className="text-[var(--ds-color-muted)]">×{line.quantity}</span>
-                  </li>
-                ))}
-              </ul>
-              {order.notes ? (
-                <p className="rounded-[var(--ds-radius-md)] bg-[var(--ds-color-surface-muted)] p-[var(--ds-space-2)] text-[length:var(--ds-text-caption)] text-[var(--ds-color-fg)]">
-                  Note: {order.notes}
-                </p>
-              ) : null}
-            </Card>
+            <KitchenTicketCard
+              key={order.id}
+              order={order}
+              tone={tone}
+              totalLabel={formatMoney(order.total)}
+            />
           ))
         )}
       </div>

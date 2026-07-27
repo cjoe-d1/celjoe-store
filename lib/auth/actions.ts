@@ -4,9 +4,17 @@ import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { requireEnv } from "config/env";
-import { isAdminRole, type AdminRole } from "lib/auth/admin-roles";
 import { clearCookieSession, writeCookieSession } from "lib/auth/session";
-import { supabase as browserSupabase } from "lib/supabase/client";
+
+/**
+ * Authentication actions — Phase A
+ *
+ * Two flows only:
+ *  - Admin: sign in, sign out, password reset
+ *  - Customer: sign in, register, sign out, forgot password, change password
+ *
+ * No role inference. No permission checks. Binary admin/customer.
+ */
 
 const getSupabaseServerClient = async () => {
   const cookieStore = await cookies();
@@ -37,21 +45,6 @@ const getSupabaseServerClient = async () => {
   );
 };
 
-const inferRole = (
-  userMetadata: Record<string, unknown> | null | undefined,
-  appMetadata: Record<string, unknown> | null | undefined,
-  email: string,
-): AdminRole | null => {
-  const declared =
-    (appMetadata?.role as string | undefined) ??
-    (userMetadata?.role as string | undefined);
-  if (declared && isAdminRole(declared)) return declared;
-  if (email.endsWith("@celjoe.store") || email.endsWith("@celjoe.com")) {
-    return "customer_service";
-  }
-  return null;
-};
-
 const passwordIsStrong = (password: string): boolean => {
   if (password.length < 10) return false;
   const hasLetter = /[A-Za-z]/.test(password);
@@ -64,6 +57,10 @@ const appendNext = (next: string, search: string): string => {
   params.set("next", next);
   return `?${params.toString()}`;
 };
+
+// ============================================================================
+// Admin auth actions
+// ============================================================================
 
 export async function signInAction(formData: FormData): Promise<void> {
   const email = String(formData.get("email") ?? "")
@@ -91,20 +88,13 @@ export async function signInAction(formData: FormData): Promise<void> {
     redirect(`/admin/login${appendNext(next, "error=invalid-credentials")}`);
   }
 
-  const role = inferRole(data.user.user_metadata, data.user.app_metadata, email);
-  if (!role) {
-    await supabase.auth.signOut();
-    redirect(`/admin/login${appendNext(next, "error=not-staff")}`);
-  }
-
   await writeCookieSession({
     userId: data.user.id,
     email,
     fullName:
       (data.user.user_metadata?.full_name as string | undefined) ??
       email.split("@")[0] ??
-      "Staff",
-    role,
+      "Admin",
     isActive: true,
   });
 
@@ -122,6 +112,29 @@ export async function signOutAction(): Promise<void> {
   redirect("/admin/login");
 }
 
+export async function requestPasswordResetAction(formData: FormData): Promise<void> {
+  const email = String(formData.get("email") ?? "")
+    .trim()
+    .toLowerCase();
+  if (!email) {
+    redirect(`/admin/forgot-password?error=missing-fields`);
+  }
+  try {
+    const supabase = await getSupabaseServerClient();
+    const origin = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+    await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${origin}/admin/reset-password`,
+    });
+  } catch {
+    // intentionally swallow — never reveal whether the email exists
+  }
+  redirect(`/admin/forgot-password?sent=1`);
+}
+
+// ============================================================================
+// Customer auth actions
+// ============================================================================
+
 export async function customerSignInAction(formData: FormData): Promise<void> {
   const email = String(formData.get("email") ?? "")
     .trim()
@@ -133,7 +146,14 @@ export async function customerSignInAction(formData: FormData): Promise<void> {
     redirect(`/account/login?error=missing-fields&next=${encodeURIComponent(next)}`);
   }
 
-  const { error } = await browserSupabase.auth.signInWithPassword({
+  let supabase;
+  try {
+    supabase = await getSupabaseServerClient();
+  } catch {
+    redirect(`/account/login?error=service-unavailable&next=${encodeURIComponent(next)}`);
+  }
+
+  const { error } = await supabase.auth.signInWithPassword({
     email,
     password,
   });
@@ -158,11 +178,23 @@ export async function customerRegisterAction(formData: FormData): Promise<void> 
     redirect(`/account/register?error=weak-password`);
   }
 
-  const { error } = await browserSupabase.auth.signUp({
+  let supabase;
+  try {
+    supabase = await getSupabaseServerClient();
+  } catch {
+    redirect(`/account/register?error=service-unavailable`);
+  }
+
+  const { error } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      data: { first_name: firstName, last_name: lastName, role: "customer" },
+      data: {
+        first_name: firstName,
+        last_name: lastName,
+        full_name: `${firstName}${lastName ? " " + lastName : ""}`,
+        role: "customer",
+      },
     },
   });
   if (error) {
@@ -171,21 +203,109 @@ export async function customerRegisterAction(formData: FormData): Promise<void> 
   redirect(`/account/login?registered=1`);
 }
 
-export async function requestPasswordResetAction(formData: FormData): Promise<void> {
+export async function customerSignOutAction(): Promise<void> {
+  try {
+    const supabase = await getSupabaseServerClient();
+    await supabase.auth.signOut();
+  } catch {
+    // continue
+  }
+  redirect("/");
+}
+
+export async function customerForgotPasswordAction(formData: FormData): Promise<void> {
   const email = String(formData.get("email") ?? "")
     .trim()
     .toLowerCase();
   if (!email) {
-    redirect(`/admin/forgot-password?error=missing-fields`);
+    redirect(`/account/forgot-password?error=missing-fields`);
   }
   try {
     const supabase = await getSupabaseServerClient();
     const origin = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
     await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${origin}/admin/reset-password`,
+      redirectTo: `${origin}/account/reset-password`,
     });
   } catch {
     // intentionally swallow — never reveal whether the email exists
   }
-  redirect(`/admin/forgot-password?sent=1`);
+  redirect(`/account/forgot-password?sent=1`);
+}
+
+export async function customerChangePasswordAction(formData: FormData): Promise<void> {
+  const currentPassword = String(formData.get("current_password") ?? "");
+  const newPassword = String(formData.get("new_password") ?? "");
+  const confirmPassword = String(formData.get("confirm_password") ?? "");
+
+  if (!currentPassword || !newPassword || !confirmPassword) {
+    redirect(`/account/settings?error=missing-fields`);
+  }
+  if (newPassword !== confirmPassword) {
+    redirect(`/account/settings?error=password-mismatch`);
+  }
+  if (!passwordIsStrong(newPassword)) {
+    redirect(`/account/settings?error=weak-password`);
+  }
+
+  let supabase;
+  try {
+    supabase = await getSupabaseServerClient();
+  } catch {
+    redirect(`/account/settings?error=service-unavailable`);
+  }
+
+  // Re-authenticate with current password to confirm identity before change.
+  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+  if (sessionError || !sessionData.session) {
+    redirect(`/account/login?next=/account/settings`);
+  }
+  const userEmail = sessionData.session.user.email;
+  if (!userEmail) {
+    redirect(`/account/settings?error=service-unavailable`);
+  }
+
+  // Re-verify current password
+  const { error: reauthError } = await supabase.auth.signInWithPassword({
+    email: userEmail,
+    password: currentPassword,
+  });
+  if (reauthError) {
+    redirect(`/account/settings?error=invalid-current-password`);
+  }
+
+  const { error: updateError } = await supabase.auth.updateUser({
+    password: newPassword,
+  });
+  if (updateError) {
+    redirect(`/account/settings?error=${encodeURIComponent(updateError.message)}`);
+  }
+
+  redirect(`/account/settings?password-changed=1`);
+}
+
+export async function customerUpdateProfileAction(formData: FormData): Promise<void> {
+  const firstName = String(formData.get("first_name") ?? "").trim();
+  const lastName = String(formData.get("last_name") ?? "").trim();
+  const phone = String(formData.get("phone") ?? "").trim();
+
+  let supabase;
+  try {
+    supabase = await getSupabaseServerClient();
+  } catch {
+    redirect(`/account/settings?error=service-unavailable`);
+  }
+
+  const { error } = await supabase.auth.updateUser({
+    data: {
+      first_name: firstName,
+      last_name: lastName,
+      full_name: `${firstName}${lastName ? " " + lastName : ""}`.trim(),
+      phone,
+    },
+  });
+  if (error) {
+    redirect(`/account/settings?error=${encodeURIComponent(error.message)}`);
+  }
+
+  redirect(`/account/settings?profile-updated=1`);
 }

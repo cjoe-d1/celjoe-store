@@ -205,8 +205,24 @@ export const MultiSelect = forwardRef<
 
 export function Checkbox({
   className,
+  label,
   ...props
-}: React.ComponentPropsWithoutRef<"input"> & { type?: never }) {
+}: React.ComponentPropsWithoutRef<"input"> & { type?: never; label?: string }) {
+  if (label) {
+    return (
+      <label className="inline-flex items-center gap-[var(--ds-space-2)] text-[length:var(--ds-text-body)] text-[var(--ds-color-fg)]">
+        <input
+          type="checkbox"
+          className={clsx(
+            "h-4 w-4 rounded border border-[var(--ds-color-border)] text-[var(--ds-color-accent)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[var(--ds-color-focus-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--ds-color-bg)]",
+            className,
+          )}
+          {...props}
+        />
+        <span>{label}</span>
+      </label>
+    );
+  }
   return (
     <input
       type="checkbox"

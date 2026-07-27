@@ -6,16 +6,13 @@ import {
   Container,
   EditorialQuote,
   EditorialSplit,
-  Field,
-  FormSection,
   Label,
   SectionTitle,
   Stack,
-  Textarea,
-  TextInput,
 } from "components/chds";
 import { EditorialHero } from "components/chds/page-sections";
 import Footer from "components/layout/footer";
+import { QuotationForm } from "components/forms/quotation-form";
 import { buildMetadata } from "lib/seo";
 import Link from "next/link";
 
@@ -218,45 +215,7 @@ async function CateringContent() {
             </p>
           </Stack>
 
-          <form
-            className="mt-[var(--ds-space-8)] grid grid-cols-1 gap-[var(--ds-space-4)] sm:grid-cols-2"
-            action="/api/catering-enquiry"
-            method="post"
-          >
-            <FormSection title="Your details">
-              <Field label="Full name">
-                <TextInput name="name" required autoComplete="name" />
-              </Field>
-              <Field label="Email">
-                <TextInput name="email" type="email" required autoComplete="email" />
-              </Field>
-              <Field label="Phone">
-                <TextInput name="phone" type="tel" required autoComplete="tel" />
-              </Field>
-            </FormSection>
-            <FormSection title="Event">
-              <Field label="Event type">
-                <TextInput name="event_type" placeholder="Wedding, Corporate, ..." />
-              </Field>
-              <Field label="Guest count">
-                <TextInput name="guests" type="number" min={1} inputMode="numeric" />
-              </Field>
-              <Field label="Date (approx.)">
-                <TextInput name="event_date" type="date" />
-              </Field>
-            </FormSection>
-            <div className="sm:col-span-2">
-              <Field label="Notes" hint="Tell us about the room, the occasion, and any must-haves.">
-                <Textarea name="notes" rows={5} />
-              </Field>
-            </div>
-            <div className="sm:col-span-2 flex flex-wrap items-center justify-between gap-[var(--ds-space-3)] pt-[var(--ds-space-2)]">
-              <p className="text-[length:var(--ds-text-caption)] text-[var(--ds-color-muted)]">
-                We typically respond within 24 hours.
-              </p>
-              <Button type="submit">Send enquiry</Button>
-            </div>
-          </form>
+          <QuotationForm />
         </div>
       </Container>
 

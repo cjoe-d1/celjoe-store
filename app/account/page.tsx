@@ -2,8 +2,10 @@ import type { Metadata } from "next";
 
 import { Button, KpiCard } from "components/chds";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { AccountShell } from "./_shell";
+import { getCurrentCustomerSession } from "lib/auth/session";
 
 export const metadata: Metadata = {
   title: "Account",
@@ -11,7 +13,13 @@ export const metadata: Metadata = {
     "Your Celjoe account — orders, addresses, saved meals, notifications, and preferences.",
 };
 
-export default function AccountPage() {
+export const dynamic = "force-dynamic";
+
+export default async function AccountPage() {
+  const session = await getCurrentCustomerSession();
+  if (!session) {
+    redirect("/account/login?next=/account");
+  }
   return (
     <AccountShell
       current="/account"

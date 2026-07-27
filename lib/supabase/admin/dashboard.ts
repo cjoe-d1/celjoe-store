@@ -30,7 +30,7 @@ const sumTotals = (orders: AdminOrder[]): number =>
   orders.reduce((acc, o) => acc + Number(o.total ?? 0), 0);
 
 export async function getOperationsDashboard(): Promise<OperationsDashboard> {
-  const [live, today, customers, ingredients] = await Promise.all([
+  const [live, today, customersResult, ingredients] = await Promise.all([
     listAdminOrders({ status: "all", pageSize: 8 }),
     listAdminOrders({
       status: "all",
@@ -41,13 +41,12 @@ export async function getOperationsDashboard(): Promise<OperationsDashboard> {
     listIngredients(),
   ]);
 
+  const customers = customersResult.customers;
+
   const inKitchen = live.orders.filter((o) =>
     ["preparing", "confirmed"].includes(o.orderStatus),
   ).length;
   const ready = live.orders.filter((o) => o.orderStatus === "ready").length;
-  const onWay = live.orders.filter(
-    (o) => o.orderStatus === "out_for_delivery",
-  ).length;
 
   const todayRevenue = sumTotals(today.orders);
   const lowStock = ingredients.filter(
@@ -64,7 +63,7 @@ export async function getOperationsDashboard(): Promise<OperationsDashboard> {
     {
       label: "Live orders",
       value: String(live.total),
-      hint: `${inKitchen} in kitchen · ${ready} ready · ${onWay} on the way`,
+      hint: `${inKitchen} in kitchen · ${ready} ready`,
       tone: "neutral",
     },
     {
@@ -95,7 +94,7 @@ export async function getOperationsDashboard(): Promise<OperationsDashboard> {
     alerts.push({
       id: "ready-pickup",
       title: `${ready} order${ready === 1 ? "" : "s"} ready for pickup`,
-      description: "Hand off to riders or customers.",
+      description: "Hand off to the customer.",
       tone: "info",
       href: "/admin/orders?status=ready",
     });

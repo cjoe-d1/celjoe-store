@@ -5,15 +5,12 @@ import Footer from "components/layout/footer";
 import { buildMetadata } from "lib/seo";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { customerSignOutAction } from "lib/auth/actions";
 
 export const SECTIONS: { label: string; href: string; description: string }[] = [
   { label: "Overview", href: "/account", description: "Your account at a glance." },
   { label: "Orders", href: "/account/orders", description: "Order history and status." },
   { label: "Addresses", href: "/account/addresses", description: "Delivery addresses on file." },
-  { label: "Wishlist", href: "/account/wishlist", description: "Meals you want to come back to." },
-  { label: "Saved Meals", href: "/account/saved", description: "Reorder your favourites." },
-  { label: "Notifications", href: "/account/notifications", description: "Choose what we tell you about." },
-  { label: "Preferences", href: "/account/preferences", description: "Dietary notes and preferences." },
   { label: "Settings", href: "/account/settings", description: "Profile, email, and password." },
 ];
 
@@ -58,6 +55,16 @@ export function AccountShell({
                     </li>
                   );
                 })}
+                <li>
+                  <form action={customerSignOutAction}>
+                    <button
+                      type="submit"
+                      className="block w-full rounded-[var(--ds-radius-md)] px-[var(--ds-space-3)] py-[var(--ds-space-2)] text-left text-[length:var(--ds-text-body)] text-[var(--ds-color-fg)] transition-colors hover:bg-[var(--ds-color-surface-muted)]"
+                    >
+                      Sign out
+                    </button>
+                  </form>
+                </li>
               </ul>
             </nav>
           </aside>

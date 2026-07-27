@@ -1,63 +1,60 @@
 import { buildMetadata } from "lib/seo";
-import { AdminPageContainer, AdminTopBar } from "components/chds/admin";
-import { Card, Label, Button } from "components/chds";
-import { getCurrentSession } from "lib/auth/session";
-import { requirePermission } from "lib/auth/guards";
+import {
+  AdminPageContainer,
+  AdminTopBar,
+} from "components/chds/admin";
+import { Card, Label } from "components/chds";
+import { requireAdmin } from "lib/auth/guards";
+import { ReportsExplorer } from "./explorer";
+import { listAdminOrders } from "lib/supabase/admin/orders";
+import { listAdminProducts } from "lib/supabase/admin/catalog";
 
 export const dynamic = "force-dynamic";
 
 export const metadata = buildMetadata({
   title: "Reports",
-  description: "Operational and financial reports.",
+  description: "Revenue, orders, products, customers.",
   path: "/admin/reports",
   noIndex: true,
 });
 
-const REPORTS = [
-  { title: "Revenue", description: "Daily, weekly, monthly revenue with category split." },
-  { title: "Orders", description: "Order volume by status, channel, and time window." },
-  { title: "Products", description: "Best sellers, slow movers, and stock turnover." },
-  { title: "Kitchen", description: "Preparation times, queue depth, and delays." },
-  { title: "Inventory", description: "Stock health, waste, and purchase history." },
-  { title: "Customers", description: "Acquisition, retention, and lifetime value." },
-  { title: "Deliveries", description: "Rider performance, ETA accuracy, and on-time rate." },
-];
+export default async function AdminReportsPage(props: {
+  searchParams: Promise<{ from?: string; to?: string }>;
+}) {
+  await requireAdmin();
 
-export default async function AdminReportsPage() {
-  const session = await getCurrentSession();
-  if (!session) return null;
-  requirePermission(session, "orders:read");
+  const sp = await props.searchParams;
+  const now = new Date();
+  const defaultFrom = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+    .toISOString()
+    .slice(0, 10);
+  const defaultTo = now.toISOString().slice(0, 10);
+  const from = sp.from || defaultFrom;
+  const to = sp.to || defaultTo;
+
+  const [ordersPage, productsList] = await Promise.all([
+    listAdminOrders({ pageSize: 200 }),
+    listAdminProducts(),
+  ]);
 
   return (
     <>
       <AdminTopBar
         title="Reports"
-        description="Operational and financial insights. Connect exports when ready."
-        actions={
-          <Button variant="outline" disabled>
-            Schedule report
-          </Button>
-        }
+        description="Date-filtered insights across revenue, orders, products, and customers."
       />
       <AdminPageContainer>
-        <div className="grid grid-cols-1 gap-[var(--ds-space-4)] sm:grid-cols-2 lg:grid-cols-3">
-          {REPORTS.map((r) => (
-            <Card key={r.title} variant="dashboard" className="flex flex-col gap-[var(--ds-space-2)]">
-              <Label tone="muted">{r.title}</Label>
-              <p className="text-[length:var(--ds-text-body)] text-[var(--ds-color-fg)]">
-                {r.description}
-              </p>
-              <div className="mt-auto flex gap-[var(--ds-space-2)]">
-                <Button variant="outline" size="sm" disabled>
-                  Preview
-                </Button>
-                <Button variant="ghost" size="sm" disabled>
-                  Export CSV
-                </Button>
-              </div>
-            </Card>
-          ))}
-        </div>
+        <Card variant="dashboard">
+          <Label tone="muted">Reports</Label>
+          <div className="mt-[var(--ds-space-4)]">
+            <ReportsExplorer
+              from={from}
+              to={to}
+              orders={ordersPage.orders}
+              products={productsList.products}
+            />
+          </div>
+        </Card>
       </AdminPageContainer>
     </>
   );

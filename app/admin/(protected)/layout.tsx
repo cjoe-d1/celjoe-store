@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import { AdminShell } from "components/layout/admin-shell";
 import { getCurrentSession } from "lib/auth/session";
-import { adminRoleLabel } from "lib/auth/admin-roles";
 import { ReactNode } from "react";
 
 export const dynamic = "force-dynamic";
@@ -19,7 +18,7 @@ export default async function AdminLayout({
     <AdminShell
       fullName={session.fullName}
       email={session.email}
-      roleLabel={adminRoleLabel(session.role)}
+      roleLabel="Admin"
     >
       {children}
     </AdminShell>

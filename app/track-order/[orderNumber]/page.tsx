@@ -10,6 +10,7 @@ import Footer from "components/layout/footer";
 import { buildMetadata } from "lib/seo";
 import {
   buildOrderTimeline,
+  formatMoney,
   getOrderByNumber,
   statusLabel,
 } from "lib/supabase/orders";

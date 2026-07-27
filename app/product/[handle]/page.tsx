@@ -33,7 +33,7 @@ export async function generateMetadata(props: {
 
   if (!product) return buildMetadata({ title: "Not found", noIndex: true });
 
-  const url = product.imageUrl ?? product.images[0]?.url;
+  const url = product.images[0]?.url;
   const alt = product.images[0]?.altText ?? product.name;
   const indexable = !product.tags.includes(HIDDEN_PRODUCT_TAG);
 
@@ -59,7 +59,7 @@ export default async function ProductPage(props: {
     "@type": "Product",
     name: product.name,
     description: product.description,
-    image: product.imageUrl ?? product.images[0]?.url,
+    image: product.images[0]?.url,
     offers: {
       "@type": "AggregateOffer",
       availability: product.isAvailable
@@ -71,12 +71,7 @@ export default async function ProductPage(props: {
     },
   };
 
-  const images =
-    product.images.length > 0
-      ? product.images
-      : product.imageUrl
-        ? [{ id: "featured", url: product.imageUrl, altText: product.name, displayOrder: 0 }]
-        : [];
+  const images = product.images;
 
   return (
     <>
@@ -177,7 +172,6 @@ export default async function ProductPage(props: {
               <ProductMeta
                 rows={[
                   ...(product.category ? [{ label: "Category", value: product.category.name }] : []),
-                  ...(product.sku ? [{ label: "SKU", value: product.sku }] : []),
                   ...(product.tags.length ? [{ label: "Tags", value: product.tags.join(", ") }] : []),
                 ]}
               />
