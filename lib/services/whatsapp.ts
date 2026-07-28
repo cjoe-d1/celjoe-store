@@ -55,31 +55,10 @@ export async function sendWhatsAppNotification(
     `[WhatsApp] Notification queued:\n  To: ${message.to}\n  Body: ${message.body}`,
   );
 
-  // Attempt Twilio if credentials are configured (future-proofing)
-  const accountSid = process.env.TWILIO_ACCOUNT_SID;
-  const authToken = process.env.TWILIO_AUTH_TOKEN;
-  const twilioPhone = process.env.TWILIO_PHONE_NUMBER;
-
-  if (accountSid && authToken && twilioPhone) {
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const twilio = require("twilio");
-      const client = twilio(accountSid, authToken);
-      await client.messages.create({
-        from: `whatsapp:${twilioPhone}`,
-        to: `whatsapp:${sanitisePhone(message.to)}`,
-        body: message.body,
-      });
-      return { ok: true };
-    } catch (err) {
-      console.error("[WhatsApp] Twilio send failed:", err);
-      return { ok: false, error: "Twilio send failed" };
-    }
-  }
-
-  // No Twilio configured — this is expected in Phase F.
+  // Phase G: Twilio API integration will be added here.
+  // For now, log the notification and use wa.me links in the admin UI.
   console.log(
-    "[WhatsApp] Twilio not configured. Use the wa.me link in the admin UI.",
+    "[WhatsApp] Notification logged. Twilio not yet configured. Use the wa.me link in the admin UI.",
   );
   return { ok: true };
 }
@@ -88,7 +67,6 @@ export async function sendWhatsAppNotification(
  * Build a quotation notification message for the admin.
  */
 export function buildAdminQuotationAlert(quote: {
-  quote_number: string;
   customer_name: string;
   customer_phone: string;
   event_type?: string | null;
@@ -96,8 +74,7 @@ export function buildAdminQuotationAlert(quote: {
   event_date?: string | null;
 }): string {
   const lines = [
-    `📋 *New Quotation Request* — ${quote.quote_number}`,
-    `Customer: ${quote.customer_name}`,
+    `📋 *New Quotation Request* — from ${quote.customer_name}`,
     `Phone: ${quote.customer_phone}`,
   ];
   if (quote.event_type) lines.push(`Event: ${quote.event_type}`);

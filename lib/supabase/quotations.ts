@@ -1,4 +1,4 @@
-import { supabase } from "lib/supabase/client";
+import { db } from "lib/supabase/admin";
 
 export type QuotationStatus =
   | "pending"
@@ -36,26 +36,26 @@ export type CreateQuotationInput = {
 };
 
 /**
- * Submit a new quotation request (customer-facing, no auth required).
+ * Submit a new quotation request.
+ *
+ * Uses the server-side service-role client — the browser never
+ * touches Supabase directly.  The customer receives only a
+ * success/error result; the inserted row is not returned.
  */
 export async function createQuotation(
   input: CreateQuotationInput,
-): Promise<QuotationRow> {
-  const { data, error } = await supabase
-    .from("quotations")
-    .insert({
-      customer_name: input.customer_name,
-      customer_email: input.customer_email,
-      customer_phone: input.customer_phone,
-      event_type: input.event_type ?? null,
-      guest_count: input.guest_count ?? null,
-      event_date: input.event_date ?? null,
-      notes: input.notes ?? null,
-      status: "pending",
-    })
-    .select("*")
-    .single();
+): Promise<{ success: true }> {
+  const { error } = await db.from("quotations").insert({
+    customer_name: input.customer_name,
+    customer_email: input.customer_email,
+    customer_phone: input.customer_phone,
+    event_type: input.event_type ?? null,
+    guest_count: input.guest_count ?? null,
+    event_date: input.event_date ?? null,
+    notes: input.notes ?? null,
+    status: "pending",
+  });
 
   if (error) throw error;
-  return data as QuotationRow;
+  return { success: true };
 }
