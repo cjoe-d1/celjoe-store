@@ -25,6 +25,19 @@ export const env = {
   vercel: {
     productionUrl: getOptional("VERCEL_PROJECT_PRODUCTION_URL"),
   },
+  /** Hosted Evolution API configuration (Phase G). */
+  evolution: {
+    apiUrl: getOptional("EVOLUTION_API_URL") ?? "",
+    apiKey: getOptional("EVOLUTION_API_KEY") ?? "",
+    instance: getOptional("EVOLUTION_INSTANCE") ?? "",
+    businessNumber: getOptional("BUSINESS_WHATSAPP_NUMBER") ?? "",
+  },
+  /** WhatsApp feature toggle and legacy config. */
+  whatsapp: {
+    enabled: getOptional("WHATSAPP_ENABLED") === "true",
+    number: getOptional("WHATSAPP_NUMBER") ?? "",
+    businessNumber: getOptional("BUSINESS_WHATSAPP_NUMBER") ?? "",
+  },
 } as const;
 
 export const requireEnv = {

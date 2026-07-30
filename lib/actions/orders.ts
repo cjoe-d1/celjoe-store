@@ -6,6 +6,10 @@ import { requireAdmin } from "lib/auth/guards";
 import { getClientMetadata } from "lib/auth/session";
 import { logAudit, auditFromSession } from "lib/auth/audit";
 import type { OrderStatus } from "lib/supabase/orders";
+import {
+  notifyCustomerOrderConfirmed,
+  notifyCustomerOrderReady,
+} from "lib/services/whatsapp";
 
 type ActionResult = { ok: true } | { ok: false; error: string };
 
@@ -25,7 +29,7 @@ export async function acceptOrderAction(orderId: string): Promise<ActionResult> 
         updated_at: new Date().toISOString(),
       })
       .eq("id", orderId)
-      .select("id, order_number")
+      .select("id, order_number, customer_name, customer_phone, total")
       .single();
 
     if (error) return { ok: false, error: error.message };
@@ -35,6 +39,19 @@ export async function acceptOrderAction(orderId: string): Promise<ActionResult> 
         orderNumber: data?.order_number,
       }, ip, userAgent),
     );
+
+    // Notify customer (non-blocking — DB always wins)
+    if (data) {
+      notifyCustomerOrderConfirmed({
+        order_number: data.order_number,
+        customer_name: data.customer_name ?? "Valued Customer",
+        customer_phone: data.customer_phone,
+        total: Number(data.total ?? 0),
+        items_count: 0, // items count not needed for confirmation
+      }).catch((waErr) =>
+        console.error("[Orders] Confirmation notification failed:", waErr),
+      );
+    }
 
     revalidatePath("/admin/orders");
     revalidatePath(`/admin/orders/${orderId}`);
@@ -182,7 +199,7 @@ async function transitionOrderAction(
         updated_at: new Date().toISOString(),
       })
       .eq("id", orderId)
-      .select("id, order_number")
+      .select("id, order_number, customer_name, customer_phone")
       .single();
 
     if (error) return { ok: false, error: error.message };
@@ -193,6 +210,17 @@ async function transitionOrderAction(
         nextStatus,
       }, ip, userAgent),
     );
+
+    // Notify customer when order is ready (non-blocking)
+    if (nextStatus === "ready" && data) {
+      notifyCustomerOrderReady({
+        order_number: data.order_number,
+        customer_name: data.customer_name ?? "Valued Customer",
+        customer_phone: data.customer_phone,
+      }).catch((waErr) =>
+        console.error("[Orders] Ready notification failed:", waErr),
+      );
+    }
 
     revalidatePath("/admin/orders");
     revalidatePath(`/admin/orders/${orderId}`);

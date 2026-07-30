@@ -1,31 +1,157 @@
-import { siteConfig } from "lib/site-config";
+import { resolveWhatsAppProvider } from "lib/providers/whatsapp";
+import {
+  buildAdminQuotationAlert,
+  buildCustomerQuotationMessage,
+} from "lib/notifications/templates/quotations";
+import {
+  buildAdminNewOrderAlert,
+  buildCustomerOrderConfirmation,
+  buildCustomerOrderReady,
+} from "lib/notifications/templates/orders";
+
+// --------------------------------------------------------------------------
+// Re-export templates for backward compatibility
+// --------------------------------------------------------------------------
+export {
+  buildAdminQuotationAlert,
+  buildCustomerQuotationMessage,
+} from "lib/notifications/templates/quotations";
+export {
+  buildAdminNewOrderAlert,
+  buildCustomerOrderConfirmation,
+  buildCustomerOrderReady,
+} from "lib/notifications/templates/orders";
+
+// --------------------------------------------------------------------------
+// Feature toggle
+// --------------------------------------------------------------------------
+// WHATSAPP_ENABLED="true"  → real WhatsApp (production)
+// WHATSAPP_ENABLED != "true" → console logging only (development)
+
+const isEnabled = (): boolean => process.env.WHATSAPP_ENABLED === "true";
+
+// --------------------------------------------------------------------------
+// Business recipient resolution
+// --------------------------------------------------------------------------
+// Priority chain (Phase K will swap order):
+//
+//   Phase K (future):
+//     Business Settings (database "settings" table)
+//     ↓ fallback
+//     Environment variable
+//     ↓ fallback
+//     null (log warning, no notification)
+//
+//   Phase G (current):
+//     Environment variable only
+//
+// When Phase K implements the Settings module, the top of this
+// function gains a database lookup.  No other notification code
+// needs to change.
+
+function resolveBusinessRecipient(): string | null {
+  // ---------------------------------------------------------------
+  // Phase K: read `whatsapp_business_number` from the `settings`
+  // table before the env-var fallback.
+  //
+  // Example:
+  //   const db = getServiceRoleClient();
+  //   const { data } = await db.from("settings")
+  //     .select("value")
+  //     .eq("key", "whatsapp_business_number")
+  //     .maybeSingle();
+  //   if (data?.value) return data.value;
+  // ---------------------------------------------------------------
+
+  const envNumber = process.env.BUSINESS_WHATSAPP_NUMBER;
+  if (envNumber) return envNumber;
+
+  console.warn(
+    "[NotificationService] BUSINESS_WHATSAPP_NUMBER is not set. " +
+      "Business notifications will be logged only.",
+  );
+  return null;
+}
+
+// --------------------------------------------------------------------------
+// Internal helpers
+// --------------------------------------------------------------------------
+
+function sanitisePhone(phone: string): string {
+  return phone.replace(/[^\d+]/g, "");
+}
+
+const sleep = (ms: number): Promise<void> =>
+  new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
- * WhatsApp notification service.
+ * Retry-friendly notification sender.
  *
- * Phase F: Sends WhatsApp messages via the wa.me click-to-chat URL.
- * This is a lightweight approach that doesn't require Twilio setup.
- *
- * Phase G will upgrade to the Twilio REST API for programmatic sending.
+ * Attempts up to 3 times with backoff delays.
+ * Never throws — callers (actions) are not affected by failures.
  */
+async function notify(to: string, body: string): Promise<void> {
+  if (!isEnabled()) {
+    console.log(
+      "[NotificationService] WhatsApp disabled (WHATSAPP_ENABLED is not 'true').",
+      { to, body },
+    );
+    return;
+  }
+
+  const provider = resolveWhatsAppProvider();
+  if (!provider) {
+    console.log("[NotificationService] No provider available — logged only.", {
+      to,
+      body,
+    });
+    return;
+  }
+
+  // Retry: 3 total attempts, with 2 s and 5 s delays between retries.
+  const delays = [2000, 5000];
+  let lastError: string | undefined = undefined;
+
+  for (let attempt = 0; attempt <= delays.length; attempt++) {
+    try {
+      const result = await provider.sendTextMessage(to, body);
+      if (result.ok) {
+        if (attempt > 0) {
+          console.log("[NotificationService] Succeeded on retry.");
+        }
+        return;
+      }
+      lastError = result.error;
+    } catch (err) {
+      lastError = err instanceof Error ? err.message : String(err);
+    }
+
+    // Wait before the next retry (skip after the last attempt)
+    if (attempt < delays.length) {
+      const delay = delays[attempt];
+      console.log(
+        `[NotificationService] Retry ${attempt + 1}/${delays.length} (${delay} ms delay)...`,
+      );
+      await sleep(delay!);
+    }
+  }
+
+  console.error(
+    "[NotificationService] All retries exhausted. Failure logged.",
+    { lastError },
+  );
+}
+
+// --------------------------------------------------------------------------
+// Public API — the ONLY functions actions should import
+// --------------------------------------------------------------------------
 
 export type WhatsAppMessage = {
   to: string;
   body: string;
 };
 
-/**
- * Formats a phone number for WhatsApp by stripping non-digit characters
- * and ensuring it doesn't start with '+'.
- */
-function sanitisePhone(phone: string): string {
-  return phone.replace(/[^\d+]/g, "");
-}
-
-/**
- * Generate a WhatsApp click-to-chat URL.
- * Used in admin UI to provide a quick-contact button.
- */
+/** Generate a WhatsApp click-to-chat URL (admin UI quick-contact). */
 export function waChatUrl(phone: string, body: string): string {
   const sanitised = sanitisePhone(phone);
   const encoded = encodeURIComponent(body);
@@ -33,73 +159,94 @@ export function waChatUrl(phone: string, body: string): string {
 }
 
 /**
- * Send a WhatsApp notification (server-side).
+ * Low-level send — kept for compatibility.
  *
- * Currently logs the message. Phase G will add Twilio API integration.
- * Returns true if the admin WhatsApp number is configured.
+ * Prefer the typed builders below for business events.
  */
 export async function sendWhatsAppNotification(
   message: WhatsAppMessage,
 ): Promise<{ ok: boolean; error?: string }> {
-  const adminPhone = siteConfig.contact.whatsapp;
-
-  if (!adminPhone) {
-    console.warn(
-      "[WhatsApp] WHATSAPP_NUMBER env var not set — notification skipped.",
-    );
-    return { ok: false, error: "WhatsApp number not configured" };
+  if (!message.to) {
+    console.warn("[NotificationService] No recipient — skipped.");
+    return { ok: false, error: "No recipient" };
   }
-
-  // Phase F: log the message. Phase G will send via Twilio.
-  console.log(
-    `[WhatsApp] Notification queued:\n  To: ${message.to}\n  Body: ${message.body}`,
-  );
-
-  // Phase G: Twilio API integration will be added here.
-  // For now, log the notification and use wa.me links in the admin UI.
-  console.log(
-    "[WhatsApp] Notification logged. Twilio not yet configured. Use the wa.me link in the admin UI.",
-  );
-  return { ok: true };
+  try {
+    await notify(message.to, message.body);
+    return { ok: true };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Notification failed",
+    };
+  }
 }
 
-/**
- * Build a quotation notification message for the admin.
- */
-export function buildAdminQuotationAlert(quote: {
+// --------------------------------------------------------------------------
+// Business-level notification helpers
+// --------------------------------------------------------------------------
+// Actions call these rather than composing messages manually.
+// They handle the provider, recipient, and error isolation.
+
+export async function notifyAdminNewQuotation(quote: {
   customer_name: string;
   customer_phone: string;
+  customer_email?: string;
   event_type?: string | null;
   guest_count?: number | null;
   event_date?: string | null;
-}): string {
-  const lines = [
-    `📋 *New Quotation Request* — from ${quote.customer_name}`,
-    `Phone: ${quote.customer_phone}`,
-  ];
-  if (quote.event_type) lines.push(`Event: ${quote.event_type}`);
-  if (quote.guest_count) lines.push(`Guests: ${quote.guest_count}`);
-  if (quote.event_date) lines.push(`Date: ${quote.event_date}`);
-  lines.push(`Review: ${siteConfig.url}/admin/quotations`);
-  return lines.join("\n");
+  notes?: string | null;
+  quote_number?: string;
+}): Promise<void> {
+  const recipient = resolveBusinessRecipient();
+  if (!recipient) return;
+  const message = buildAdminQuotationAlert(quote);
+  await notify(recipient, message);
 }
 
-/**
- * Build a quotation response message for the customer.
- */
-export function buildCustomerQuotationMessage(quote: {
+export async function notifyCustomerQuotationStatus(quote: {
   quote_number: string;
   status: string;
   quoted_amount?: number | null;
-}): string {
-  const lines = [
-    `Hello! Your quotation *${quote.quote_number}* has been updated to *${quote.status}*.`,
-  ];
-  if (quote.quoted_amount) {
-    lines.push(
-      `Amount: ₦${Number(quote.quoted_amount).toLocaleString("en-NG")}`,
-    );
-  }
-  lines.push(`View details: ${siteConfig.url}/track-order?quote=${quote.quote_number}`);
-  return lines.join("\n");
+  customer_phone: string;
+}): Promise<void> {
+  const message = buildCustomerQuotationMessage(quote);
+  await notify(quote.customer_phone, message);
+}
+
+export async function notifyAdminNewOrder(order: {
+  order_number: string;
+  customer_name: string;
+  customer_phone?: string | null;
+  total: number;
+  items_count: number;
+}): Promise<void> {
+  const recipient = resolveBusinessRecipient();
+  if (!recipient) return;
+  const message = buildAdminNewOrderAlert(order);
+  await notify(recipient, message);
+}
+
+export async function notifyCustomerOrderConfirmed(order: {
+  order_number: string;
+  customer_name: string;
+  customer_phone?: string | null;
+  total: number;
+  items_count: number;
+}): Promise<void> {
+  if (!order.customer_phone) return;
+  const message = buildCustomerOrderConfirmation(order);
+  await notify(order.customer_phone, message);
+}
+
+export async function notifyCustomerOrderReady(order: {
+  order_number: string;
+  customer_name: string;
+  customer_phone?: string | null;
+}): Promise<void> {
+  if (!order.customer_phone) return;
+  const message = buildCustomerOrderReady({
+    order_number: order.order_number,
+    customer_name: order.customer_name,
+  });
+  await notify(order.customer_phone, message);
 }

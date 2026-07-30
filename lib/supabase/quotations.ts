@@ -39,23 +39,26 @@ export type CreateQuotationInput = {
  * Submit a new quotation request.
  *
  * Uses the server-side service-role client — the browser never
- * touches Supabase directly.  The customer receives only a
- * success/error result; the inserted row is not returned.
+ * touches Supabase directly. Returns the created row so callers
+ * can access the auto-generated quote_number for notifications.
  */
 export async function createQuotation(
   input: CreateQuotationInput,
-): Promise<{ success: true }> {
-  const { error } = await db.from("quotations").insert({
-    customer_name: input.customer_name,
-    customer_email: input.customer_email,
-    customer_phone: input.customer_phone,
-    event_type: input.event_type ?? null,
-    guest_count: input.guest_count ?? null,
-    event_date: input.event_date ?? null,
-    notes: input.notes ?? null,
-    status: "pending",
-  });
+): Promise<QuotationRow> {
+  const { data, error } = await db.from("quotations")
+    .insert({
+      customer_name: input.customer_name,
+      customer_email: input.customer_email,
+      customer_phone: input.customer_phone,
+      event_type: input.event_type ?? null,
+      guest_count: input.guest_count ?? null,
+      event_date: input.event_date ?? null,
+      notes: input.notes ?? null,
+      status: "pending",
+    })
+    .select("*")
+    .single();
 
   if (error) throw error;
-  return { success: true };
+  return data as QuotationRow;
 }

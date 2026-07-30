@@ -10,9 +10,8 @@ import {
   type QuotationStatus,
 } from "lib/supabase/admin/quotations";
 import {
-  sendWhatsAppNotification,
-  buildAdminQuotationAlert,
-  buildCustomerQuotationMessage,
+  notifyAdminNewQuotation,
+  notifyCustomerQuotationStatus,
 } from "lib/services/whatsapp";
 
 type ActionResult = { ok: true } | { ok: false; error: string };
@@ -43,7 +42,7 @@ export async function submitQuotationAction(
       return { ok: false, error: "Guest count must be at least 1." };
     }
 
-    await createQuotation({
+    const quotation = await createQuotation({
       customer_name: customerName,
       customer_email: customerEmail,
       customer_phone: customerPhone,
@@ -55,15 +54,15 @@ export async function submitQuotationAction(
 
     // Notify admin via WhatsApp — must never block quotation creation
     try {
-      await sendWhatsAppNotification({
-        to: customerPhone,
-        body: buildAdminQuotationAlert({
-          customer_name: customerName,
-          customer_phone: customerPhone,
-          event_type: eventType,
-          guest_count: guestCount,
-          event_date: eventDate,
-        }),
+      await notifyAdminNewQuotation({
+        customer_name: customerName,
+        customer_phone: customerPhone,
+        customer_email: customerEmail,
+        event_type: eventType,
+        guest_count: guestCount,
+        event_date: eventDate,
+        notes,
+        quote_number: quotation.quote_number,
       });
     } catch (waError) {
       console.error("[WhatsApp] Quotation alert failed (non-blocking):", waError);
@@ -116,13 +115,11 @@ export async function updateQuotationStatusAction(
     // Notify customer if status changed to "quoted" or "accepted" — non-blocking
     if (status === "quoted" || status === "accepted") {
       try {
-        await sendWhatsAppNotification({
-          to: quotation.customer_phone,
-          body: buildCustomerQuotationMessage({
-            quote_number: quotation.quote_number,
-            status,
-            quoted_amount: quotation.quoted_amount,
-          }),
+        await notifyCustomerQuotationStatus({
+          quote_number: quotation.quote_number,
+          status,
+          quoted_amount: quotation.quoted_amount,
+          customer_phone: quotation.customer_phone,
         });
       } catch (waError) {
         console.error("[Quotations] WhatsApp notification failed (non-blocking):", waError);
