@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { createSupabaseClient } from "lib/supabase/client";
+import { CURRENCY_CODE } from "lib/format-currency";
 
 export type CurrencyCode = string;
 
@@ -44,7 +45,7 @@ export type Cart = {
   };
 };
 
-const DEFAULT_CURRENCY_CODE: CurrencyCode = "USD";
+const DEFAULT_CURRENCY_CODE: CurrencyCode = CURRENCY_CODE;
 const CART_TOKEN_COOKIE = "cartToken";
 
 const money = (amount: number, currencyCode = DEFAULT_CURRENCY_CODE): Money => ({

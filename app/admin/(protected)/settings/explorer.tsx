@@ -99,12 +99,8 @@ export function SettingsExplorer({ initial }: Props) {
     startTransition(async () => {
       const r = await savePaymentSettingsAction({
         acceptedMethods: ((payments.acceptedMethods as string[]) ?? []).filter(Boolean),
-        stripePublicKey: String(payments.stripePublicKey ?? ""),
-        stripeSecretKey: String(payments.stripeSecretKey ?? ""),
         paystackPublicKey: String(payments.paystackPublicKey ?? ""),
         paystackSecretKey: String(payments.paystackSecretKey ?? ""),
-        flutterwavePublicKey: String(payments.flutterwavePublicKey ?? ""),
-        flutterwaveSecretKey: String(payments.flutterwaveSecretKey ?? ""),
         defaultCurrency: String(payments.defaultCurrency ?? "NGN"),
       });
       flash(r.ok ? "Saved." : r.error, !r.ok);
@@ -306,12 +302,8 @@ export function SettingsExplorer({ initial }: Props) {
               />
             ))}
           </div>
-          <Field label="Stripe public key"><TextInput value={String(payments.stripePublicKey ?? "")} onChange={(e) => (payments.stripePublicKey = e.target.value)} /></Field>
-          <Field label="Stripe secret key"><TextInput type="password" value={String(payments.stripeSecretKey ?? "")} onChange={(e) => (payments.stripeSecretKey = e.target.value)} /></Field>
           <Field label="Paystack public key"><TextInput value={String(payments.paystackPublicKey ?? "")} onChange={(e) => (payments.paystackPublicKey = e.target.value)} /></Field>
           <Field label="Paystack secret key"><TextInput type="password" value={String(payments.paystackSecretKey ?? "")} onChange={(e) => (payments.paystackSecretKey = e.target.value)} /></Field>
-          <Field label="Flutterwave public key"><TextInput value={String(payments.flutterwavePublicKey ?? "")} onChange={(e) => (payments.flutterwavePublicKey = e.target.value)} /></Field>
-          <Field label="Flutterwave secret key"><TextInput type="password" value={String(payments.flutterwaveSecretKey ?? "")} onChange={(e) => (payments.flutterwaveSecretKey = e.target.value)} /></Field>
           <div className="md:col-span-2 flex justify-end">
             <Button onClick={submitPayments} variant="primary" disabled={pending}>
               Save payments
@@ -438,9 +430,7 @@ function ApiKeyForm() {
       ) : null}
       <div className="grid grid-cols-1 gap-[var(--ds-space-3)] md:grid-cols-[1fr_2fr_auto]">
         <Select value={provider} onChange={(e) => setProvider(e.target.value)}>
-          <option value="stripe">Stripe</option>
           <option value="paystack">Paystack</option>
-          <option value="flutterwave">Flutterwave</option>
           <option value="sendgrid">SendGrid</option>
           <option value="twilio">Twilio</option>
           <option value="termii">Termii</option>

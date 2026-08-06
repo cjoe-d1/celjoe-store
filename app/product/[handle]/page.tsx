@@ -17,7 +17,7 @@ import {
 import Footer from "components/layout/footer";
 import { HIDDEN_PRODUCT_TAG } from "lib/constants";
 import { toProductCardModel } from "lib/product-helpers";
-import { buildMetadata } from "lib/seo";
+import { buildMetadata, productJsonLd, breadcrumbJsonLd, renderJsonLd } from "lib/seo";
 import { getProductBySlug, getRelatedProducts } from "lib/supabase/products";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -54,22 +54,24 @@ export default async function ProductPage(props: {
 
   if (!product) return notFound();
 
-  const productJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "Product",
+  const productJsonLdData = productJsonLd({
     name: product.name,
     description: product.description,
     image: product.images[0]?.url,
-    offers: {
-      "@type": "AggregateOffer",
-      availability: product.isAvailable
-        ? "https://schema.org/InStock"
-        : "https://schema.org/OutOfStock",
-      priceCurrency: product.price.currencyCode,
-      highPrice: product.price.amount,
-      lowPrice: product.price.amount,
-    },
-  };
+    price: Number(product.price.amount),
+    currency: product.price.currencyCode,
+    isAvailable: product.isAvailable,
+    url: `/product/${product.slug}`,
+  });
+
+  const breadcrumbLd = breadcrumbJsonLd([
+    { name: "Home", href: "/" },
+    { name: "Kitchen", href: "/kitchen" },
+    ...(product.category
+      ? [{ name: product.category.name, href: `/search/${product.category.slug}` }]
+      : []),
+    { name: product.name, href: `/product/${product.slug}` },
+  ]);
 
   const images = product.images;
 
@@ -78,7 +80,13 @@ export default async function ProductPage(props: {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(productJsonLd),
+          __html: renderJsonLd(productJsonLdData),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: renderJsonLd(breadcrumbLd),
         }}
       />
 
@@ -113,7 +121,7 @@ export default async function ProductPage(props: {
 
       <div className="mx-auto mt-[var(--ds-space-6)] max-w-(--breakpoint-2xl) px-4">
         <div className="flex flex-col rounded-[var(--ds-radius-xl)] border border-[var(--ds-color-border)] bg-[var(--ds-color-surface)] p-[var(--ds-space-6)] shadow-[var(--ds-shadow-sm)] md:p-[var(--ds-space-10)] lg:flex-row lg:gap-[var(--ds-space-10)]">
-          <div className="h-full w-full basis-full lg:basis-3/5">
+          <div id="celjoe-product-image" className="h-full w-full basis-full lg:basis-3/5">
             <Suspense
               fallback={
                 <div className="relative aspect-square h-full max-h-[600px] w-full overflow-hidden rounded-[var(--ds-radius-xl)] bg-[var(--ds-color-surface-muted)]" />

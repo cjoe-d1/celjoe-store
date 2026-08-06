@@ -6,6 +6,8 @@
  * sending to the provider layer.
  */
 
+import { formatCurrency } from "lib/format-currency";
+
 const NL = "\n";
 
 export function buildAdminQuotationAlert(quote: {
@@ -66,8 +68,7 @@ export function buildCustomerQuotationMessage(quote: {
   ];
 
   if (quote.quoted_amount && quote.quoted_amount > 0) {
-    const amount = Number(quote.quoted_amount).toLocaleString("en-NG");
-    lines.push("", `Amount: \u20A6${amount}`);
+    lines.push("", `Amount: ${formatCurrency(quote.quoted_amount)}`);
   }
 
   return lines.join(NL);

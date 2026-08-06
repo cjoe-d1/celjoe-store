@@ -20,7 +20,7 @@ import Link from "next/link";
 export const metadata: Metadata = buildMetadata({
   title: "Catering",
   description:
-    "Celjoe Catering — weddings, corporate, birthdays, and private dining. Service-led events planned with intention.",
+    "Celjoe Catering — elevated wedding receptions, corporate galas, intimate birthday dinners, and private dining experiences in Lagos. Bespoke menus, service-led events, and culinary excellence crafted to order.",
   path: "/catering",
 });
 

@@ -20,7 +20,7 @@ import Link from "next/link";
 export const metadata: Metadata = buildMetadata({
   title: "The Smokehouse",
   description:
-    "Fire-kissed flavours from the Celjoe Smokehouse. Slow-smoked proteins, weekend specials, and our signature weekend platters.",
+    "Celjoe Smokehouse — Lagos' premier destination for fire-kissed BBQ. Slow-smoked brisket, fall-off-the-bone ribs, signature weekend platters, and open-flame cooking crafted with patience and premium Nigerian charcoal.",
   path: "/bbq",
 });
 

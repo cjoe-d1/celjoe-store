@@ -149,12 +149,8 @@ export async function saveDeliverySettingsAction(input: {
 
 export async function savePaymentSettingsAction(input: {
   acceptedMethods: string[];
-  stripePublicKey: string;
-  stripeSecretKey: string;
   paystackPublicKey: string;
   paystackSecretKey: string;
-  flutterwavePublicKey: string;
-  flutterwaveSecretKey: string;
   defaultCurrency: string;
 }): Promise<ActionResult> {
   try {

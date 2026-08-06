@@ -1,4 +1,5 @@
 import { supabase } from "lib/supabase/client";
+import { CURRENCY_CODE } from "lib/format-currency";
 
 export type CurrencyCode = string;
 
@@ -84,7 +85,7 @@ export type Pagination = {
   offset?: number;
 };
 
-const DEFAULT_CURRENCY_CODE: CurrencyCode = "USD";
+const DEFAULT_CURRENCY_CODE: CurrencyCode = CURRENCY_CODE;
 const DEFAULT_LIMIT = 24;
 
 type DbCategory = {

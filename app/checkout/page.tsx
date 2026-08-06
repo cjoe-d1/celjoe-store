@@ -6,10 +6,14 @@ import {
   PaymentCard,
 } from "components/chds";
 import { Button, TextInput, Select, Checkbox, FormSection, Field } from "components/chds";
+import { buildMetadata } from "lib/seo";
 
-export const metadata = {
+export const metadata = buildMetadata({
   title: "Checkout",
-};
+  description: "Complete your Celjoe order. Secure payment via Paystack in Nigerian Naira.",
+  path: "/checkout",
+  noIndex: true,
+});
 
 export default function CheckoutPage() {
   const steps = [
@@ -59,14 +63,13 @@ export default function CheckoutPage() {
             </div>
           </DeliveryCard>
 
-          <PaymentCard title="Payment" description="Select a payment method.">
+          <PaymentCard title="Payment" description="Secured by Paystack. All transactions in Nigerian Naira (₦).">
             <div className="flex flex-col gap-[var(--ds-space-4)]">
-              <Select>
-                <option>Paystack</option>
-                <option>Bank Transfer</option>
-                <option>Cash on Delivery</option>
-              </Select>
-              <Button className="w-full">Place Order</Button>
+              <div className="rounded-[var(--ds-radius-md)] border border-[var(--ds-color-success)]/20 bg-[var(--ds-color-success)]/5 p-[var(--ds-space-3)] text-[length:var(--ds-text-caption)] text-[var(--ds-color-muted)]">
+                You&apos;ll be redirected to Paystack to complete your payment securely.
+                CELJOE never stores your card details.
+              </div>
+              <Button className="w-full">Pay with Paystack</Button>
             </div>
           </PaymentCard>
         </div>

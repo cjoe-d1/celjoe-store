@@ -27,7 +27,7 @@ import Link from "next/link";
 export const metadata: Metadata = buildMetadata({
   title: "Search",
   description:
-    "Search the Celjoe kitchen. Find meals, sides, drinks, and Smokehouse specials.",
+    "Search the Celjoe kitchen — find handcrafted Nigerian meals, cold-pressed juices, Smokehouse BBQ, chef's picks, and premium catering options in Lagos.",
   path: "/search",
 });
 

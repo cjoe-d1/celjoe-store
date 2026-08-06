@@ -5,7 +5,7 @@ export const siteConfig = {
   name: process.env.SITE_NAME || "Celjoe Store",
   company: process.env.COMPANY_NAME || "Celjoe",
   description:
-    "From our kitchen to your table — crafted with care, served with heart. A premium hospitality food platform.",
+    "Celjoe is Lagos' destination for elevated dining, handcrafted cold-pressed juices, gourmet catering, signature smokehouse cuisine, wholesome Nigerian meals, and luxury hospitality experiences — crafted fresh and delivered with excellence.",
   tagline: "Hospitality before technology.",
   url:
     process.env.NEXT_PUBLIC_SITE_URL ||
@@ -15,13 +15,13 @@ export const siteConfig = {
   currency: "NGN",
   contact: {
     email: process.env.CONTACT_EMAIL || "hello@celjoe.store",
-    phone: process.env.CONTACT_PHONE || "+234 000 0000",
-    whatsapp: process.env.WHATSAPP_NUMBER || "",
+    phone: process.env.CONTACT_PHONE || "+234 906 000 4533",
+    whatsapp: process.env.NEXT_PUBLIC_BUSINESS_WHATSAPP || "2349060004533",
   },
   social: {
-    instagram: process.env.SOCIAL_INSTAGRAM || "",
-    facebook: process.env.SOCIAL_FACEBOOK || "",
-    twitter: process.env.SOCIAL_TWITTER || "",
+    instagram: process.env.SOCIAL_INSTAGRAM || "https://instagram.com/celjoestore",
+    facebook: process.env.SOCIAL_FACEBOOK || "https://facebook.com/celjoestore",
+    twitter: process.env.SOCIAL_TWITTER || "https://x.com/celjoestore",
   },
   navigation: {
     primary: [

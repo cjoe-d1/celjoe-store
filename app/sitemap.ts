@@ -1,63 +1,90 @@
 import { getPages } from "lib/supabase/pages";
 import { supabase } from "lib/supabase/client";
 import { baseUrl } from "lib/utils";
-import { MetadataRoute } from "next";
-
-type Route = {
-  url: string;
-  lastModified: string;
-};
+import type { MetadataRoute } from "next";
 
 export const dynamic = "force-dynamic";
 
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const routesMap = [""].map((route) => ({
-    url: `${baseUrl}${route}`,
-    lastModified: new Date().toISOString(),
-  }));
+/** Static pages always included in the sitemap. */
+const STATIC_ROUTES: { path: string; priority: number; changeFrequency: string }[] = [
+  { path: "", priority: 1.0, changeFrequency: "daily" },
+  { path: "/kitchen", priority: 0.9, changeFrequency: "daily" },
+  { path: "/bbq", priority: 0.9, changeFrequency: "daily" },
+  { path: "/catering", priority: 0.9, changeFrequency: "weekly" },
+  { path: "/our-story", priority: 0.7, changeFrequency: "monthly" },
+  { path: "/search", priority: 0.6, changeFrequency: "daily" },
+  { path: "/track-order", priority: 0.5, changeFrequency: "weekly" },
+];
 
-  const categoriesPromise = supabase
-    .from("categories")
-    .select("slug,updated_at")
-    .eq("is_active", true)
-    .order("updated_at", { ascending: false })
-    .then(({ data, error }) => {
-      if (error) throw error;
-      return (data ?? []).map((category: any) => ({
-        url: `${baseUrl}/search/${category.slug}`,
-        lastModified: category.updated_at,
-      }));
-    });
+async function fetchCategories(): Promise<MetadataRoute.Sitemap> {
+  try {
+    const { data, error } = await supabase
+      .from("categories")
+      .select("slug,updated_at")
+      .eq("is_active", true)
+      .order("updated_at", { ascending: false });
 
-  const productsPromise = supabase
-    .from("products")
-    .select("slug,updated_at")
-    .eq("is_available", true)
-    .order("updated_at", { ascending: false })
-    .then(({ data, error }) => {
-      if (error) throw error;
-      return (data ?? []).map((product: any) => ({
-        url: `${baseUrl}/product/${product.slug}`,
-        lastModified: product.updated_at,
-      }));
-    });
+    if (error) return [];
+    return (data ?? []).map((category: { slug: string; updated_at: string }) => ({
+      url: `${baseUrl}/search/${category.slug}`,
+      lastModified: category.updated_at ?? new Date().toISOString(),
+      changeFrequency: "weekly" as const,
+      priority: 0.7,
+    }));
+  } catch {
+    return [];
+  }
+}
 
-  const pagesPromise = getPages().then((pages) =>
-    pages.map((page) => ({
+async function fetchProducts(): Promise<MetadataRoute.Sitemap> {
+  try {
+    const { data, error } = await supabase
+      .from("products")
+      .select("slug,updated_at")
+      .eq("is_available", true)
+      .order("updated_at", { ascending: false });
+
+    if (error) return [];
+    return (data ?? []).map((product: { slug: string; updated_at: string }) => ({
+      url: `${baseUrl}/product/${product.slug}`,
+      lastModified: product.updated_at ?? new Date().toISOString(),
+      changeFrequency: "weekly" as const,
+      priority: 0.8,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+async function fetchPages(): Promise<MetadataRoute.Sitemap> {
+  try {
+    const pages = await getPages();
+    return pages.map((page) => ({
       url: `${baseUrl}/${page.slug}`,
       lastModified: page.updatedAt,
-    })),
-  );
-
-  let fetchedRoutes: Route[] = [];
-
-  try {
-    fetchedRoutes = (
-      await Promise.all([categoriesPromise, productsPromise, pagesPromise])
-    ).flat();
-  } catch (error) {
-    throw JSON.stringify(error, null, 2);
+      changeFrequency: "monthly" as const,
+      priority: 0.6,
+    }));
+  } catch {
+    return [];
   }
+}
 
-  return [...routesMap, ...fetchedRoutes];
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const now = new Date().toISOString();
+
+  const staticRoutes: MetadataRoute.Sitemap = STATIC_ROUTES.map((r) => ({
+    url: `${baseUrl}${r.path}`,
+    lastModified: now,
+    changeFrequency: r.changeFrequency as "daily" | "weekly" | "monthly",
+    priority: r.priority,
+  }));
+
+  const [categories, products, pages] = await Promise.all([
+    fetchCategories(),
+    fetchProducts(),
+    fetchPages(),
+  ]);
+
+  return [...staticRoutes, ...categories, ...products, ...pages];
 }

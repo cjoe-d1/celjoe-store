@@ -78,12 +78,8 @@ export default async function AdminSettingsPage() {
             },
             payments: value("payments", {
               acceptedMethods: ["card", "transfer", "cash"],
-              stripePublicKey: "",
-              stripeSecretKey: "",
               paystackPublicKey: "",
               paystackSecretKey: "",
-              flutterwavePublicKey: "",
-              flutterwaveSecretKey: "",
               defaultCurrency: "NGN",
             }) as Record<string, unknown>,
             branding: value("branding", {

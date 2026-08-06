@@ -15,7 +15,7 @@ import { buildMetadata } from "lib/seo";
 export const metadata: Metadata = buildMetadata({
   title: "Our Story",
   description:
-    "The story behind Celjoe — our hospitality philosophy, kitchen standards, and the people who cook.",
+    "The story behind Celjoe — a Lagos-born hospitality brand built on culinary excellence, ingredient integrity, and a commitment to crafting memorable dining experiences from kitchen to table.",
   path: "/our-story",
 });
 

@@ -15,7 +15,9 @@ const ACCOUNT_PUBLIC_PATHS = new Set<string>([
 ]);
 
 const isAdminPath = (pathname: string) =>
-  ADMIN_PROTECTED_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+  ADMIN_PROTECTED_PREFIXES.some(
+    (p) => pathname === p || pathname.startsWith(`${p}/`),
+  );
 
 const isAccountPath = (pathname: string) =>
   ACCOUNT_PROTECTED_PREFIXES.some(
@@ -25,18 +27,33 @@ const isAccountPath = (pathname: string) =>
 const hasSupabaseAuthCookie = (request: NextRequest): boolean => {
   for (const cookie of request.cookies.getAll()) {
     const name = cookie.name;
-    // @supabase/ssr uses cookies named `sb-<project_ref>-auth-token`, often
-    // chunked into `sb-<project_ref>-auth-token.0`, `.1`, etc. Accept any
-    // cookie matching that pattern as evidence of a customer session.
     if (name.includes("auth-token") && name.startsWith("sb-")) return true;
   }
   return false;
 };
 
+// Content Security Policy — strict but compatible with Next.js, Supabase,
+// Paystack, WhatsApp, and image CDNs.
+const CONTENT_SECURITY_POLICY = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.paystack.co",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob: https:",
+  "font-src 'self' data:",
+  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.paystack.co",
+  "frame-src 'self' https://checkout.paystack.com",
+  "frame-ancestors 'none'",
+  "form-action 'self'",
+  "base-uri 'self'",
+  "object-src 'none'",
+].join("; ");
+
 export function middleware(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
   const hasAdminSession = Boolean(request.cookies.get("celjoe_session")?.value);
   const hasCustomerSession = hasSupabaseAuthCookie(request);
+
+  // --- Auth redirects ---
 
   if (isAdminPath(pathname) && !ADMIN_PUBLIC_PATHS.has(pathname)) {
     if (!hasAdminSession) {
@@ -47,14 +64,8 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  if (
-    isAccountPath(pathname) &&
-    !ACCOUNT_PUBLIC_PATHS.has(pathname)
-  ) {
+  if (isAccountPath(pathname) && !ACCOUNT_PUBLIC_PATHS.has(pathname)) {
     if (!hasCustomerSession) {
-      // Redirect at the HTTP level so that an unauthenticated request to a
-      // protected customer page goes to the sign-in screen immediately,
-      // without depending on the in-band RSC payload redirect.
       const url = request.nextUrl.clone();
       url.pathname = "/account/login";
       url.search = `?next=${encodeURIComponent(pathname + (search || ""))}`;
@@ -62,14 +73,34 @@ export function middleware(request: NextRequest) {
     }
   }
 
+  // --- Security headers ---
+
   const response = NextResponse.next();
+
+  // Prevent clickjacking
   response.headers.set("X-Frame-Options", "DENY");
+  // Prevent MIME-sniffing
   response.headers.set("X-Content-Type-Options", "nosniff");
+  // Restrict referrer information
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  // Disable unnecessary browser features
   response.headers.set(
     "Permissions-Policy",
-    "camera=(), microphone=(), geolocation=()",
+    "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
   );
+  // Content Security Policy
+  response.headers.set("Content-Security-Policy", CONTENT_SECURITY_POLICY);
+  // Prevent embedding in iframes (belt-and-suspenders with CSP)
+  response.headers.set("X-DNS-Prefetch-Control", "on");
+  // Cross-Origin isolation hints
+  response.headers.set("Cross-Origin-Opener-Policy", "same-origin");
+  response.headers.set("Cross-Origin-Resource-Policy", "same-origin");
+
+  // HSTS is set in next.config.ts headers — middleware can't control the
+  // Strict-Transport-Security header on the initial TLS handshake (the
+  // browser requires it to come from the HTTPS response headers, which
+  // Next.js serves via the `headers()` config function).
+
   return response;
 }
 

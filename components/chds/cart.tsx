@@ -5,6 +5,7 @@ import { Drawer } from "components/chds/overlays";
 import { CartEmpty } from "components/chds/empty-states";
 import { PriceDisplay } from "components/chds/product";
 import { Button } from "components/chds/button";
+import { formatCurrency } from "lib/format-currency";
 
 export type CartLine = {
   id: string;
@@ -112,7 +113,7 @@ export function CartItem({
           </Link>
           <div className="shrink-0 text-right">
             <div className="text-[length:var(--ds-text-caption)] text-[var(--ds-color-muted)]">
-              {item.lineTotal.amount} {item.lineTotal.currencyCode}
+              {formatCurrency(item.lineTotal.amount)}
             </div>
             <button
               type="button"
@@ -147,7 +148,7 @@ export function OrderSummary({
       <div className="mb-3 flex items-center justify-between border-b border-[var(--ds-color-border)] pb-1">
         <p>Taxes</p>
         <span className="text-[var(--ds-color-fg)]">
-          {summary.tax.amount} {summary.tax.currencyCode}
+          {formatCurrency(summary.tax.amount)}
         </span>
       </div>
       <div className="mb-3 flex items-center justify-between border-b border-[var(--ds-color-border)] pb-1 pt-1">
@@ -157,7 +158,7 @@ export function OrderSummary({
       <div className="mb-3 flex items-center justify-between border-b border-[var(--ds-color-border)] pb-1 pt-1">
         <p>Total</p>
         <span className="text-[var(--ds-color-fg)]">
-          {summary.total.amount} {summary.total.currencyCode}
+          {formatCurrency(summary.total.amount)}
         </span>
       </div>
     </div>

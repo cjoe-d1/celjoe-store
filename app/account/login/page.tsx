@@ -22,6 +22,8 @@ const ERROR_MESSAGES: Record<string, string> = {
     "Your email address hasn't been confirmed yet. Please check your inbox and click the verification link, then sign in.",
   "service-unavailable":
     "The authentication service is temporarily unavailable.",
+  "rate-limited":
+    "Too many login attempts. Please wait a minute before trying again.",
 };
 
 type SearchParams = Promise<{

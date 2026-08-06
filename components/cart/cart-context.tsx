@@ -2,6 +2,7 @@
 
 import type { Cart, CartItem, Money } from "lib/supabase/cart";
 import type { Product, ProductVariant } from "lib/supabase/products";
+import { CURRENCY_CODE } from "lib/format-currency";
 import React, {
   createContext,
   startTransition,
@@ -92,7 +93,7 @@ function updateCartTotals(
     (sum, item) => sum + Number(item.totalPrice.amount),
     0,
   );
-  const currencyCode = items[0]?.totalPrice.currencyCode ?? "USD";
+  const currencyCode = items[0]?.totalPrice.currencyCode ?? CURRENCY_CODE;
 
   return {
     totalQuantity,
@@ -107,9 +108,9 @@ function createEmptyCart(): Cart {
     totalQuantity: 0,
     items: [],
     cost: {
-      subtotal: { amount: "0.00", currencyCode: "USD" },
-      total: { amount: "0.00", currencyCode: "USD" },
-      tax: { amount: "0.00", currencyCode: "USD" },
+      subtotal: { amount: "0.00", currencyCode: CURRENCY_CODE },
+      total: { amount: "0.00", currencyCode: CURRENCY_CODE },
+      tax: { amount: "0.00", currencyCode: CURRENCY_CODE },
     },
   };
 }

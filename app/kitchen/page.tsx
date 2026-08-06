@@ -27,7 +27,7 @@ import Link from "next/link";
 export const metadata: Metadata = buildMetadata({
   title: "The Kitchen",
   description:
-    "The Celjoe Kitchen — today's menu, chef's picks, and the meals our guests return for. Editorial dining, freshly prepared.",
+    "Celjoe Kitchen — handcrafted Nigerian meals, cold-pressed juices, chef-curated specials, and wholesome everyday dining delivered fresh in Lagos. Explore today's menu and seasonal picks.",
   path: "/kitchen",
 });
 

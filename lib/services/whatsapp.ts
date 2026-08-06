@@ -31,34 +31,46 @@ export {
 // Phone helpers
 // --------------------------------------------------------------------------
 
-function sanitisePhone(phone: string): string {
-  return phone.replace(/[^\d+]/g, "");
+/**
+ * Sanitise and normalise a phone number for WhatsApp deep-linking.
+ *
+ * WhatsApp wa.me URLs accept numbers in E.164 format (with or without +).
+ * We enforce the `+` prefix for maximum mobile deep-link compatibility
+ * across Android, iPhone, and WhatsApp Web.
+ */
+function normalisePhone(phone: string): string {
+  let cleaned = phone.replace(/[^\d+]/g, "");
+  // Strip any existing + so we can re-add it consistently
+  cleaned = cleaned.replace(/^\+/, "");
+  return `+${cleaned}`;
 }
 
 /**
  * Generate a WhatsApp click-to-chat URL.
  *
- * Used in:
- *   - Admin UI: quick-contact button for customers
- *   - Quotation success screen: prefilled message for customer
+ * Uses `wa.me` (the official short domain) which auto-detects:
+ *   - Mobile with WhatsApp installed → opens native app directly
+ *   - Desktop / no app → redirects to web.whatsapp.com
+ *
+ * The `+` sign is URL-safe in modern browsers and ensures the
+ * international number is recognised correctly on all platforms.
  */
 export function waChatUrl(phone: string, body: string): string {
-  const sanitised = sanitisePhone(phone);
+  const normalised = normalisePhone(phone);
   const encoded = encodeURIComponent(body);
-  return `https://wa.me/${sanitised}?text=${encoded}`;
+  return `https://wa.me/${normalised}?text=${encoded}`;
 }
 
 // --------------------------------------------------------------------------
 // Quotation — customer-facing WhatsApp prefilled message
 // --------------------------------------------------------------------------
 
-import { buildAdminQuotationAlert } from "lib/notifications/templates/quotations";
-
 /**
- * Build a prefilled WhatsApp message for customer quotation summary.
+ * Build a concise, customer-friendly WhatsApp prefilled message.
  *
- * The customer manually sends this via wa.me after their quotation
- * is saved to the database. The quote_number is always included.
+ * Unlike the admin alert (verbose with emoji header), this template is
+ * optimised for the customer to review and send in one tap. It keeps
+ * the URL shorter and the chat experience cleaner.
  */
 export function buildCustomerQuotationWaText(quote: {
   customer_name: string;
@@ -70,5 +82,20 @@ export function buildCustomerQuotationWaText(quote: {
   notes?: string | null;
   quote_number: string;
 }): string {
-  return buildAdminQuotationAlert(quote);
+  const lines: string[] = [
+    `Hello CELJOE, I just submitted a quotation request.`,
+    ``,
+    `Name: ${quote.customer_name}`,
+    `Phone: ${quote.customer_phone}`,
+  ];
+
+  if (quote.customer_email) lines.push(`Email: ${quote.customer_email}`);
+  if (quote.event_type) lines.push(`Event: ${quote.event_type}`);
+  if (quote.guest_count) lines.push(`Guests: ${quote.guest_count}`);
+  if (quote.event_date) lines.push(`Date: ${quote.event_date}`);
+  if (quote.notes) lines.push(`Notes: ${quote.notes}`);
+
+  lines.push(``, `Reference: ${quote.quote_number}`);
+
+  return lines.join("\n");
 }

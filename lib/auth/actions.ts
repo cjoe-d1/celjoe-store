@@ -1,10 +1,11 @@
 "use server";
 
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { requireEnv } from "config/env";
 import { clearCookieSession, writeCookieSession } from "lib/auth/session";
+import { checkRateLimit, getRateLimitKey } from "lib/security/rate-limit";
 
 /**
  * Authentication actions — Phase A
@@ -71,6 +72,13 @@ export async function signInAction(formData: FormData): Promise<void> {
 
   if (!email || !password) {
     redirect(`/admin/login${appendNext(next, "error=missing-fields")}`);
+  }
+
+  // Rate limit: 5 attempts per minute per IP
+  const headerList = await headers();
+  const ip = headerList.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  if (!checkRateLimit(`admin-login:${ip}`, 5, 60_000)) {
+    redirect(`/admin/login${appendNext(next, "error=rate-limited")}`);
   }
 
   let supabase;
@@ -146,6 +154,13 @@ export async function customerSignInAction(formData: FormData): Promise<void> {
     redirect(`/account/login?error=missing-fields&next=${encodeURIComponent(next)}`);
   }
 
+  // Rate limit: 5 login attempts per minute per IP
+  const headerList = await headers();
+  const ip = headerList.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  if (!checkRateLimit(`customer-login:${ip}`, 5, 60_000)) {
+    redirect(`/account/login?error=rate-limited&next=${encodeURIComponent(next)}`);
+  }
+
   let supabase;
   try {
     supabase = await getSupabaseServerClient();
@@ -182,6 +197,13 @@ export async function customerRegisterAction(formData: FormData): Promise<void> 
   }
   if (!passwordIsStrong(password)) {
     redirect(`/account/register?error=weak-password`);
+  }
+
+  // Rate limit: 3 registrations per minute per IP
+  const headerList = await headers();
+  const ip = headerList.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  if (!checkRateLimit(`register:${ip}`, 3, 60_000)) {
+    redirect(`/account/register?error=rate-limited`);
   }
 
   let supabase;

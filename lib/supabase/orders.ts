@@ -74,19 +74,15 @@ export type Order = {
   updatedAt: string;
 };
 
+import { formatCurrency } from "lib/format-currency";
+
 const CURRENCY = "NGN";
 
-export const formatMoney = (n: number | null | undefined): string => {
-  const amount = Number(n ?? 0);
-  if (Number.isNaN(amount)) return `₦0`;
-  return `₦${amount.toLocaleString("en-NG", { maximumFractionDigits: 0 })}`;
-};
+export const formatMoney = (n: number | null | undefined): string =>
+  formatCurrency(n);
 
-export const formatMoneyExact = (n: number | null | undefined): string => {
-  const amount = Number(n ?? 0);
-  if (Number.isNaN(amount)) return `₦0.00`;
-  return `₦${amount.toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-};
+export const formatMoneyExact = (n: number | null | undefined): string =>
+  formatCurrency(n, { showDecimals: true });
 
 export { CURRENCY };
 
