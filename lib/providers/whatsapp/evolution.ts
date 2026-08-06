@@ -25,6 +25,20 @@ export class EvolutionWhatsAppProvider implements IWhatsAppProvider {
     text: string,
   ): Promise<{ ok: boolean; error?: string }> {
     const url = `${this.config.apiUrl}/message/sendText/${this.config.instance}`;
+    const payload = { number: to, text };
+
+    // ---- DIAGNOSTIC LOG (temporary) ----
+    console.log("[Evolution] Instance:", this.config.instance);
+    console.log("[Evolution] Request:", {
+      method: "POST",
+      url,
+      headers: {
+        "Content-Type": "application/json",
+        apikey: this.config.apiKey.slice(0, 4) + "***" + this.config.apiKey.slice(-4),
+      },
+      payload,
+    });
+    // ------------------------------------
 
     try {
       const response = await fetch(url, {
@@ -33,19 +47,29 @@ export class EvolutionWhatsAppProvider implements IWhatsAppProvider {
           "Content-Type": "application/json",
           apikey: this.config.apiKey,
         },
-        body: JSON.stringify({ number: to, text }),
+        body: JSON.stringify(payload),
       });
 
+      const responseBody = await response.text().catch(() => "(empty)");
+
+      // ---- DIAGNOSTIC LOG (temporary) ----
+      console.log("[Evolution] Response:", {
+        status: response.status,
+        statusText: response.statusText,
+        body: responseBody,
+      });
+      // ------------------------------------
+
       if (!response.ok) {
-        const body = await response.text().catch(() => "");
         return {
           ok: false,
-          error: `Evolution API ${response.status}: ${body.slice(0, 200)}`,
+          error: `Evolution API ${response.status}: ${responseBody.slice(0, 200)}`,
         };
       }
 
       return { ok: true };
     } catch (err) {
+      console.log("[Evolution] Fetch error:", err instanceof Error ? err.message : String(err));
       return {
         ok: false,
         error: err instanceof Error ? err.message : "Evolution API unreachable",
