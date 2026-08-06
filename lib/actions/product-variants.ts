@@ -40,6 +40,18 @@ export async function createVariantAction(formData: FormData): Promise<ActionRes
     const productId = String(formData.get("product_id") ?? "").trim();
     if (!productId) return { ok: false, error: "Product required." };
 
+    // Guard: only variant-type products can have additional variants created.
+    // Simple products already have their auto-generated "Default" variant.
+    const { data: product } = await db
+      .from("products")
+      .select("has_variants")
+      .eq("id", productId)
+      .single();
+
+    if (!product?.has_variants) {
+      return { ok: false, error: "Simple products cannot have additional variants. Enable variant support on the product first." };
+    }
+
     const name = sanitiseName(formData.get("name"));
     const price = sanitisePrice(formData.get("price"));
     const stockQuantity = sanitiseStock(formData.get("stock_quantity"));
@@ -146,6 +158,16 @@ export async function deleteVariantAction(formData: FormData): Promise<ActionRes
     const id = String(formData.get("id") ?? "").trim();
     if (!id) return { ok: false, error: "Variant id required." };
     const productId = String(formData.get("product_id") ?? "").trim();
+
+    // Guard: prevent deleting the only variant — every product needs at least one.
+    const { count } = await db
+      .from("product_variants")
+      .select("id", { count: "exact", head: true })
+      .eq("product_id", productId);
+
+    if (count !== null && count <= 1) {
+      return { ok: false, error: "Cannot delete the only variant. Products must have at least one variant." };
+    }
 
     const { error } = await db.from("product_variants").delete().eq("id", id);
     if (error) return { ok: false, error: error.message };

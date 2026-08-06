@@ -124,11 +124,10 @@ export function AmbientBackground() {
       {/* Layer 1 — Pulsing ambient gradient wash */}
       <div
         ref={gradientRef}
-        className="absolute inset-0"
+        className="absolute inset-0 pulse-gradient"
         style={{
           background:
             "radial-gradient(ellipse 80% 70% at 50% 30%, oklch(0.62 0.08 135 / 0.06) 0%, transparent 70%), radial-gradient(ellipse 60% 50% at 80% 70%, oklch(0.55 0.10 50 / 0.05) 0%, transparent 60%), radial-gradient(ellipse 50% 60% at 20% 50%, oklch(0.58 0.06 80 / 0.04) 0%, transparent 60%)",
-          animation: "pulse-gradient 10s ease-in-out infinite alternate",
           willChange: "opacity",
         }}
       />
@@ -137,7 +136,7 @@ export function AmbientBackground() {
       {ORBS.map((orb) => (
         <div
           key={orb.id}
-          className="absolute rounded-full"
+          className={`orb-float-${orb.id} absolute rounded-full`}
           style={{
             left: `${orb.x}%`,
             top: `${orb.y}%`,
@@ -146,9 +145,9 @@ export function AmbientBackground() {
             background: `radial-gradient(circle at 50% 50%, ${orb.colour}, transparent 75%)`,
             filter: `blur(${orb.blur}px)`,
             willChange: "transform, opacity",
-            animation: `orb-float-${orb.id} ${orb.duration}s ease-in-out infinite alternate`,
+            "--orb-duration": `${orb.duration}s`,
             transition: "transform 0.8s ease-out",
-          }}
+          } as React.CSSProperties}
         />
       ))}
 

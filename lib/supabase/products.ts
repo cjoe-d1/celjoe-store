@@ -31,7 +31,7 @@ export type ProductVariant = {
   id: string;
   productId: string;
   name: string;
-  price: Money | null;
+  price: Money;
   stockQuantity: number;
   optionValues: ProductVariantOption[];
   isAvailable: boolean;
@@ -57,6 +57,7 @@ export type Product = {
   tags: string[];
   createdAt: string;
   updatedAt: string;
+  hasVariants: boolean;
   category: ProductCategory | null;
   images: ProductImage[];
   variants: ProductVariant[];
@@ -125,6 +126,7 @@ type DbProduct = {
   tags: string[] | null;
   created_at: string;
   updated_at: string;
+  has_variants?: boolean;
   category?: DbCategory | null;
   images?: DbImage[] | null;
   variants?: DbVariant[] | null;
@@ -169,14 +171,19 @@ const buildOptionGroups = (variants: ProductVariant[]): ProductOptionGroup[] => 
 };
 
 const toProduct = (row: DbProduct, currencyCode = DEFAULT_CURRENCY_CODE): Product => {
+  const hasVariants = row.has_variants === true;
+
   const variants: ProductVariant[] = (row.variants ?? []).map((v) => {
     const optionValues = parseOptionValues(v.option_values);
     const isAvailable = v.stock_quantity > 0;
+    // For variant products, the variant price is authoritative — never fall back to product price.
+    // For simple products, the variant price (if any) inherits the product price.
+    const variantPrice = money(v.price, currencyCode) ?? money(row.price, currencyCode);
     return {
       id: v.id,
       productId: row.id,
       name: v.name,
-      price: money(v.price, currencyCode),
+      price: variantPrice!,
       stockQuantity: v.stock_quantity,
       optionValues,
       isAvailable,
@@ -207,6 +214,7 @@ const toProduct = (row: DbProduct, currencyCode = DEFAULT_CURRENCY_CODE): Produc
     tags: row.tags ?? [],
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    hasVariants,
     category: row.category
       ? {
           id: row.category.id,
@@ -249,7 +257,7 @@ const applyPagination = (query: any, pagination?: Pagination) => {
 };
 
 const baseSelect =
-  "id,category_id,name,slug,description,short_description,price,is_available,is_featured,preparation_minutes,stock_quantity,tags,created_at,updated_at,category:categories!products_category_fk(id,name,slug,parent_id),images:product_images(id,image_url,alt_text,display_order),variants:product_variants(id,name,price,stock_quantity,option_values)";
+  "id,category_id,name,slug,description,short_description,price,is_available,is_featured,preparation_minutes,stock_quantity,tags,created_at,updated_at,has_variants,category:categories!products_category_fk(id,name,slug,parent_id),images:product_images(id,image_url,alt_text,display_order),variants:product_variants(id,name,price,stock_quantity,option_values)";
 
 export const getProducts = async (options?: {
   filters?: ProductFilters;

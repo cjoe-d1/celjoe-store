@@ -146,6 +146,12 @@ export function OrderSummary({
   return (
     <div className={clsx("pt-[var(--ds-space-4)] text-sm text-[var(--ds-color-muted)]", className)}>
       <div className="mb-3 flex items-center justify-between border-b border-[var(--ds-color-border)] pb-1">
+        <p>Subtotal</p>
+        <span className="text-[var(--ds-color-fg)]">
+          {formatCurrency(summary.subtotal.amount)}
+        </span>
+      </div>
+      <div className="mb-3 flex items-center justify-between border-b border-[var(--ds-color-border)] pb-1">
         <p>Taxes</p>
         <span className="text-[var(--ds-color-fg)]">
           {formatCurrency(summary.tax.amount)}

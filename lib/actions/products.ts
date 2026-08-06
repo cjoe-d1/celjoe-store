@@ -85,6 +85,9 @@ export async function createProductAction(
     );
     const isAvailable = formData.get("is_available") === "on";
     const isFeatured = formData.get("is_featured") === "on";
+    const hasVariants = formData.get("has_variants") === "on";
+    // For variant products, product price is irrelevant (each variant owns its price)
+    const effectivePrice = hasVariants ? 0 : price;
     const discountRaw = String(formData.get("discount_price") ?? "");
     const discountPrice = discountRaw ? Number(discountRaw) : null;
     const tags = String(formData.get("tags") ?? "")
@@ -107,11 +110,12 @@ export async function createProductAction(
         description,
         short_description: shortDescription,
         category_id: categoryId,
-        price,
+        price: effectivePrice,
         discount_price: discountPrice,
         preparation_minutes: preparationMinutes,
         is_available: isAvailable,
         is_featured: isFeatured,
+        has_variants: hasVariants,
         tags,
         seo_title: seoTitle,
         seo_description: seoDescription,
@@ -125,6 +129,19 @@ export async function createProductAction(
 
     // Insert category mappings
     await setProductCategories(data.id, categoryIds);
+
+    // For simple products, auto-create a default variant so the cart system works
+    if (!hasVariants) {
+      await db.from("product_variants").insert({
+        product_id: data.id,
+        name: "Default",
+        price: effectivePrice,
+        stock_quantity: isAvailable ? 999 : 0,
+        is_available: isAvailable,
+        option_values: "[]",
+        position: 0,
+      });
+    }
 
     await logAudit(
       auditFromSession(
@@ -180,6 +197,56 @@ export async function updateProductAction(
     );
     const isAvailable = formData.get("is_available") === "on";
     const isFeatured = formData.get("is_featured") === "on";
+    const hasVariants = formData.get("has_variants") === "on";
+    // For variant products, product price is irrelevant (each variant owns its price)
+    const effectivePrice = hasVariants ? 0 : price;
+
+    // Phase 8 — Reconcile variants when switching product type.
+    // variant → simple: delete all variants, create one Default variant.
+    // simple → variant: delete the auto-generated Default variant.
+    {
+      const { data: current } = await db
+        .from("products")
+        .select("has_variants")
+        .eq("id", productId)
+        .single();
+
+      const wasVariant = current?.has_variants === true;
+      const isSwitching = wasVariant !== hasVariants;
+
+      if (isSwitching) {
+        const { data: existingVariants } = await db
+          .from("product_variants")
+          .select("id,name")
+          .eq("product_id", productId);
+
+        if (hasVariants) {
+          // Switching to variant mode: delete the Default variant.
+          const defaultVariant = (existingVariants ?? []).find(
+            (v: { id: string; name: string }) => v.name === "Default",
+          );
+          if (defaultVariant) {
+            await db.from("product_variants").delete().eq("id", defaultVariant.id);
+          }
+        } else {
+          // Switching to simple mode: delete all variants, recreate a single Default variant.
+          const variantIds = (existingVariants ?? []).map((v: { id: string }) => v.id);
+          if (variantIds.length > 0) {
+            await db.from("product_variants").delete().in("id", variantIds);
+          }
+          await db.from("product_variants").insert({
+            product_id: productId,
+            name: "Default",
+            price,
+            stock_quantity: isAvailable ? 999 : 0,
+            is_available: isAvailable,
+            option_values: "[]",
+            position: 0,
+          });
+        }
+      }
+    }
+
     const discountRaw = String(formData.get("discount_price") ?? "");
     const discountPrice = discountRaw ? Number(discountRaw) : null;
     const tags = String(formData.get("tags") ?? "")
@@ -202,11 +269,12 @@ export async function updateProductAction(
         description,
         short_description: shortDescription,
         category_id: categoryId,
-        price,
+        price: effectivePrice,
         discount_price: discountPrice,
         preparation_minutes: preparationMinutes,
         is_available: isAvailable,
         is_featured: isFeatured,
+        has_variants: hasVariants,
         tags,
         seo_title: seoTitle,
         seo_description: seoDescription,

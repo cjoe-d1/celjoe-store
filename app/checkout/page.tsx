@@ -1,3 +1,6 @@
+"use client";
+
+import { useCart } from "components/cart/cart-context";
 import {
   AddressCard,
   CheckoutProgress,
@@ -5,17 +8,16 @@ import {
   OrderSummaryCard,
   PaymentCard,
 } from "components/chds";
-import { Button, TextInput, Select, Checkbox, FormSection, Field } from "components/chds";
-import { buildMetadata } from "lib/seo";
-
-export const metadata = buildMetadata({
-  title: "Checkout",
-  description: "Complete your Celjoe order. Secure payment via Paystack in Nigerian Naira.",
-  path: "/checkout",
-  noIndex: true,
-});
+import { Button, TextInput, Checkbox, FormSection, Field } from "components/chds";
+import { formatCurrency } from "lib/format-currency";
 
 export default function CheckoutPage() {
+  const { cart } = useCart();
+  const items = cart?.items ?? [];
+  const subtotal = Number(cart?.cost?.subtotal?.amount ?? "0");
+  const deliveryFee = items.length > 0 ? 2500 : 0;
+  const total = subtotal + deliveryFee;
+
   const steps = [
     { id: "address", label: "Address", status: "complete" as const },
     { id: "delivery", label: "Delivery", status: "current" as const },
@@ -50,7 +52,7 @@ export default function CheckoutPage() {
                   <div className="font-medium text-[var(--ds-color-fg)]">Standard Delivery</div>
                   <div className="text-sm text-[var(--ds-color-muted)]">30-45 minutes</div>
                 </div>
-                <div className="ml-auto font-medium text-[var(--ds-color-fg)]">₦2,500</div>
+                <div className="ml-auto font-medium text-[var(--ds-color-fg)]">{formatCurrency(deliveryFee)}</div>
               </label>
               <label className="flex items-center gap-[var(--ds-space-3)] rounded-lg border border-[var(--ds-color-border)] p-[var(--ds-space-4)]">
                 <Checkbox />
@@ -69,7 +71,9 @@ export default function CheckoutPage() {
                 You&apos;ll be redirected to Paystack to complete your payment securely.
                 CELJOE never stores your card details.
               </div>
-              <Button className="w-full">Pay with Paystack</Button>
+              <Button className="w-full">
+                Pay {formatCurrency(total)}
+              </Button>
             </div>
           </PaymentCard>
         </div>
@@ -77,17 +81,32 @@ export default function CheckoutPage() {
         <div>
           <OrderSummaryCard>
             <div className="flex flex-col gap-[var(--ds-space-3)] text-sm text-[var(--ds-color-muted)]">
+              {/* Line items */}
+              {items.map((item) => (
+                <div key={item.id ?? item.variant?.id} className="flex items-center justify-between border-b border-[var(--ds-color-border)] pb-2">
+                  <div className="flex-1 pr-2">
+                    <p className="text-[var(--ds-color-fg)]">{item.product.name}</p>
+                    <p className="text-[length:var(--ds-text-caption)]">
+                      Qty: {item.quantity}
+                      {item.variant?.name && item.variant.name !== "Default" && ` · ${item.variant.name}`}
+                    </p>
+                  </div>
+                  <span className="text-[var(--ds-color-fg)] shrink-0">
+                    {formatCurrency(item.totalPrice.amount)}
+                  </span>
+                </div>
+              ))}
               <div className="flex items-center justify-between border-b border-[var(--ds-color-border)] pb-2">
                 <p>Subtotal</p>
-                <span className="text-[var(--ds-color-fg)]">₦0.00</span>
+                <span className="text-[var(--ds-color-fg)]">{formatCurrency(subtotal)}</span>
               </div>
               <div className="flex items-center justify-between border-b border-[var(--ds-color-border)] pb-2">
                 <p>Delivery</p>
-                <span className="text-[var(--ds-color-fg)]">₦2,500.00</span>
+                <span className="text-[var(--ds-color-fg)]">{formatCurrency(deliveryFee)}</span>
               </div>
               <div className="flex items-center justify-between pt-2 font-medium text-[length:var(--ds-text-h4)] text-[var(--ds-color-fg)]">
                 <p>Total</p>
-                <span>₦2,500.00</span>
+                <span>{formatCurrency(total)}</span>
               </div>
             </div>
           </OrderSummaryCard>

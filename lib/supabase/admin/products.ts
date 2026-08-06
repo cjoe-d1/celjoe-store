@@ -26,6 +26,7 @@ export type ProductRow = {
   seo_description: string | null;
   created_at: string;
   updated_at: string;
+  has_variants?: boolean;
   /** Populated when joining with categories via category_id */
   primary_category?: { id: string; name: string; slug: string } | null;
 };
@@ -67,7 +68,7 @@ export async function getProductById(
     db
       .from("products")
       .select(
-        "id,category_id,name,slug,description,short_description,price,is_available,is_featured,preparation_minutes,tags,discount_price,status,is_archived,seo_title,seo_description,created_at,updated_at"
+        "id,category_id,name,slug,description,short_description,price,is_available,is_featured,preparation_minutes,tags,discount_price,status,is_archived,seo_title,seo_description,has_variants,created_at,updated_at"
       )
       .eq("id", id)
       .maybeSingle(),

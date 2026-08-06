@@ -1,12 +1,9 @@
 import {
-  AvailabilityBadge,
   Badge,
   Button,
   Container,
   EditorialQuote,
   Label,
-  PreparationTime,
-  PriceDisplay,
   ProductCard,
   ProductGallery,
   ProductMeta,
@@ -150,17 +147,7 @@ export default async function ProductPage(props: {
                 </p>
               ) : null}
               <div className="mt-[var(--ds-space-3)] flex flex-wrap items-center gap-[var(--ds-space-3)]">
-                <AvailabilityBadge available={product.isAvailable} />
-                {product.preparationTimeMinutes ? (
-                  <PreparationTime minutes={product.preparationTimeMinutes} />
-                ) : null}
                 {product.isFeatured ? <Badge tone="accent">Chef&apos;s Pick</Badge> : null}
-              </div>
-              <div className="mt-[var(--ds-space-4)]">
-                <PriceDisplay
-                  amount={product.price.amount}
-                  currencyCode={product.price.currencyCode}
-                />
               </div>
             </div>
 
@@ -299,13 +286,6 @@ export default async function ProductPage(props: {
           <aside className="hidden lg:block">
             <div className="sticky top-[var(--ds-space-24)] rounded-[var(--ds-radius-xl)] border border-[var(--ds-color-border)] bg-[var(--ds-color-surface)] p-[var(--ds-space-6)] shadow-[var(--ds-shadow-sm)]">
               <Label tone="muted">Quick add</Label>
-              <div className="mt-[var(--ds-space-3)] flex items-center justify-between">
-                <PriceDisplay
-                  amount={product.price.amount}
-                  currencyCode={product.price.currencyCode}
-                />
-                <AvailabilityBadge available={product.isAvailable} />
-              </div>
               <div className="mt-[var(--ds-space-4)]">
                 <Suspense fallback={null}>
                   <ProductInteractive product={product} />

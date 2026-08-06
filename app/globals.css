@@ -65,11 +65,20 @@ button {
   100% { transform: translate(-30px, 5px) scale(1.01); }
 }
 
+/* Static class references to prevent CSS tree-shaking in production */
+/* The CSS optimizer can detect these static usages and preserves the keyframes */
+.orb-float-1 { animation: orb-float-1 var(--orb-duration, 32s) ease-in-out infinite alternate; }
+.orb-float-2 { animation: orb-float-2 var(--orb-duration, 36s) ease-in-out infinite alternate; }
+.orb-float-3 { animation: orb-float-3 var(--orb-duration, 30s) ease-in-out infinite alternate; }
+.orb-float-4 { animation: orb-float-4 var(--orb-duration, 40s) ease-in-out infinite alternate; }
+
 @keyframes pulse-gradient {
   0%   { opacity: 0.6; }
   50%  { opacity: 0.9; }
   100% { opacity: 0.6; }
 }
+
+.pulse-gradient { animation: pulse-gradient 10s ease-in-out infinite alternate; }
 
 /* Hover-lift: subtle elevation on interactive cards */
 .hover-lift {

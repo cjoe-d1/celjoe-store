@@ -80,6 +80,11 @@ export function ProductForm({
   );
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
+  // Product type toggle
+  const [isVariantProduct, setIsVariantProduct] = useState<boolean>(
+    product?.has_variants ?? false
+  );
+
   const tree = useMemo(() => buildTree(categories), [categories]);
 
   const toggleCategory = (id: string) => {
@@ -259,27 +264,73 @@ export function ProductForm({
             defaultValue={product?.preparation_minutes ?? 0}
           />
         </Field>
-        <Field label="Price (₦)">
-          <TextInput
-            name="price"
-            type="number"
-            step="0.01"
-            min="0"
-            defaultValue={product?.price ?? ""}
-            placeholder="0.00"
-            required
-          />
-        </Field>
-        <Field label="Discount price (₦)">
-          <TextInput
-            name="discount_price"
-            type="number"
-            step="0.01"
-            min="0"
-            defaultValue={product?.discount_price ?? ""}
-            placeholder="0.00"
-          />
-        </Field>
+
+        {/* ── Pricing section ── */}
+        <div className="col-span-full">
+          <div className="rounded-[var(--ds-radius-md)] border border-[var(--ds-color-border)] bg-[var(--ds-color-surface)] p-[var(--ds-space-4)]">
+            <p className="mb-[var(--ds-space-3)] font-medium text-[var(--ds-color-fg)]">Pricing</p>
+
+            <div className="flex gap-[var(--ds-space-6)] mb-[var(--ds-space-4)]">
+              <label className="flex cursor-pointer items-center gap-[var(--ds-space-2)] select-none">
+                <input
+                  type="radio"
+                  name="product_type"
+                  checked={!isVariantProduct}
+                  onChange={() => setIsVariantProduct(false)}
+                  className="size-[18px] cursor-pointer accent-[var(--ds-color-accent)]"
+                />
+                <span className="text-[length:var(--ds-text-body)] text-[var(--ds-color-fg)]">
+                  Simple Product
+                </span>
+              </label>
+              <label className="flex cursor-pointer items-center gap-[var(--ds-space-2)] select-none">
+                <input
+                  type="radio"
+                  name="product_type"
+                  checked={isVariantProduct}
+                  onChange={() => setIsVariantProduct(true)}
+                  className="size-[18px] cursor-pointer accent-[var(--ds-color-accent)]"
+                />
+                <span className="text-[length:var(--ds-text-body)] text-[var(--ds-color-fg)]">
+                  Product with Variants
+                </span>
+              </label>
+            </div>
+
+            {/* Hidden input to send has_variants to server */}
+            <input type="hidden" name="has_variants" value={isVariantProduct ? "on" : ""} />
+
+            {isVariantProduct ? (
+              <p className="text-[length:var(--ds-text-caption)] text-[var(--ds-color-muted)]">
+                Each variant owns its price, stock, and availability. Configure variants after saving.
+              </p>
+            ) : (
+              <div className="grid grid-cols-1 gap-[var(--ds-space-4)] md:grid-cols-2">
+                <Field label="Price (₦)">
+                  <TextInput
+                    name="price"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    defaultValue={product?.price ?? ""}
+                    placeholder="0.00"
+                    required={!isVariantProduct}
+                  />
+                </Field>
+                <Field label="Discount price (₦)">
+                  <TextInput
+                    name="discount_price"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    defaultValue={product?.discount_price ?? ""}
+                    placeholder="0.00"
+                  />
+                </Field>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       <Field label="Short description">

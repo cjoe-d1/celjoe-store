@@ -62,7 +62,8 @@ function createOrUpdateCartItem(
   product: Product,
 ): CartItem {
   const quantity = existingItem ? existingItem.quantity + 1 : 1;
-  const unitPrice = variant.price ?? product.price;
+  // Variant price is always authoritative — guaranteed non-null by the product mapper.
+  const unitPrice = variant.price;
   const totalPrice = multiplyMoney(quantity, unitPrice);
 
   return {
@@ -211,20 +212,21 @@ export function useCart() {
         type: "UPDATE_ITEM",
         payload: { variantId, updateType },
       });
+    });
 
-      if (updateType === "delete") {
+    // Fire server mutations outside the transition so they don't block UI
+    if (updateType === "delete") {
+      removeItem(null, variantId);
+    } else {
+      const currentQty = currentItem?.quantity ?? 0;
+      const newQty =
+        updateType === "plus" ? currentQty + 1 : currentQty - 1;
+      if (newQty <= 0) {
         removeItem(null, variantId);
       } else {
-        const currentQty = currentItem?.quantity ?? 0;
-        const newQty =
-          updateType === "plus" ? currentQty + 1 : currentQty - 1;
-        if (newQty <= 0) {
-          removeItem(null, variantId);
-        } else {
-          updateItemQuantity(null, { variantId, quantity: newQty });
-        }
+        updateItemQuantity(null, { variantId, quantity: newQty });
       }
-    });
+    }
   };
 
   const addCartItem = (variant: ProductVariant, product: Product) => {

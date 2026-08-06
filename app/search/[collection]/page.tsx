@@ -5,6 +5,7 @@ import { ProductCard } from "components/chds";
 import { defaultSort, sorting } from "lib/constants";
 import { getCategoryBySlug } from "lib/supabase/categories";
 import { getProductsByCategory } from "lib/supabase/products";
+import { toProductCardModel } from "lib/product-helpers";
 
 const toProductSort = (
   sortKey: string,
@@ -51,17 +52,7 @@ export default async function CategoryPage(props: {
           {products.map((product) => (
             <ProductCard
               key={product.id}
-              product={{
-                id: product.id,
-                name: product.name,
-                slug: product.slug,
-                shortDescription: product.shortDescription,
-                imageUrl: product.images[0]?.url ?? null,
-                imageAlt: product.images[0]?.altText ?? product.name,
-                price: product.price,
-                isAvailable: product.isAvailable,
-                preparationTimeMinutes: product.preparationTimeMinutes,
-              }}
+              product={toProductCardModel(product)}
             />
           ))}
         </div>
