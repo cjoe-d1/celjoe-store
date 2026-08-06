@@ -61,22 +61,20 @@ export function QuotationForm() {
           Your quotation <strong>{quoteNumber}</strong> has been received. We will review it and get back to you within 24 hours.
         </p>
 
-        {BUSINESS_WHATSAPP ? (
-          <div className="mt-[var(--ds-space-6)]">
-            <p className="mb-[var(--ds-space-3)] text-[length:var(--ds-text-caption)] text-[var(--ds-color-muted)]">
-              For a faster response, send us the details on WhatsApp.
-            </p>
-            <Button asChild>
-              <a
-                href={waChatUrl(BUSINESS_WHATSAPP, waText)}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Continue on WhatsApp
-              </a>
-            </Button>
-          </div>
-        ) : null}
+        <div className="mt-[var(--ds-space-6)]">
+          <p className="mb-[var(--ds-space-3)] text-[length:var(--ds-text-caption)] text-[var(--ds-color-muted)]">
+            For a faster response, send us the details on WhatsApp.
+          </p>
+          <Button asChild>
+            <a
+              href={waChatUrl(BUSINESS_WHATSAPP, waText)}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Continue on WhatsApp
+            </a>
+          </Button>
+        </div>
 
         <div className="mt-[var(--ds-space-6)] flex flex-wrap justify-center gap-[var(--ds-space-3)]">
           <Button variant={BUSINESS_WHATSAPP ? "outline" : "primary"} asChild>

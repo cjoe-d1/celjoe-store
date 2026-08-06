@@ -158,7 +158,13 @@ export async function customerSignInAction(formData: FormData): Promise<void> {
     password,
   });
   if (error) {
-    redirect(`/account/login?error=invalid-credentials&next=${encodeURIComponent(next)}`);
+    const code =
+      error.message?.includes("not confirmed") || error.message?.includes("verify")
+        ? "email-not-confirmed"
+        : "invalid-credentials";
+    redirect(
+      `/account/login?error=${code}&email=${encodeURIComponent(email)}&next=${encodeURIComponent(next)}`,
+    );
   }
   redirect(next);
 }
@@ -185,7 +191,7 @@ export async function customerRegisterAction(formData: FormData): Promise<void> 
     redirect(`/account/register?error=service-unavailable`);
   }
 
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
@@ -200,6 +206,13 @@ export async function customerRegisterAction(formData: FormData): Promise<void> 
   if (error) {
     redirect(`/account/register?error=${encodeURIComponent(error.message)}`);
   }
+
+  // If the project has email confirmation enabled, `data.session` is null
+  // and the user must verify their email before signing in.
+  if (!data.session) {
+    redirect(`/account/login?check-email=1&email=${encodeURIComponent(email)}`);
+  }
+
   redirect(`/account/login?registered=1`);
 }
 

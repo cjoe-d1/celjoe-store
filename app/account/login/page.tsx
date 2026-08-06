@@ -18,11 +18,19 @@ export const dynamic = "force-dynamic";
 const ERROR_MESSAGES: Record<string, string> = {
   "missing-fields": "Email and password are required.",
   "invalid-credentials": "Those credentials don't match an account.",
+  "email-not-confirmed":
+    "Your email address hasn't been confirmed yet. Please check your inbox and click the verification link, then sign in.",
   "service-unavailable":
     "The authentication service is temporarily unavailable.",
 };
 
-type SearchParams = Promise<{ next?: string; error?: string; registered?: string }>;
+type SearchParams = Promise<{
+  next?: string;
+  error?: string;
+  registered?: string;
+  "check-email"?: string;
+  email?: string;
+}>;
 
 export default async function CustomerLoginPage(props: { searchParams: SearchParams }) {
   const sp = await props.searchParams;
@@ -31,8 +39,10 @@ export default async function CustomerLoginPage(props: { searchParams: SearchPar
     redirect(sp.next || "/account");
   }
   const next = sp.next ?? "/account";
-  const errorMessage = sp.error ? ERROR_MESSAGES[sp.error] : null;
+  const errorMessage = sp.error ? ERROR_MESSAGES[sp.error] ?? sp.error : null;
   const justRegistered = sp.registered === "1";
+  const checkEmail = sp["check-email"] === "1";
+  const emailDefault = sp.email ?? "";
 
   return (
     <main className="min-h-screen bg-[var(--ds-color-bg)] py-[var(--ds-space-16)]">
@@ -52,6 +62,15 @@ export default async function CustomerLoginPage(props: { searchParams: SearchPar
             className="mb-[var(--ds-space-4)] rounded-[var(--ds-radius-md)] border border-[var(--ds-color-success)]/40 bg-[var(--ds-color-success)]/10 p-[var(--ds-space-3)] text-[length:var(--ds-text-body)] text-[var(--ds-color-fg)]"
           >
             Account created. Please sign in.
+          </div>
+        ) : null}
+
+        {checkEmail ? (
+          <div
+            role="status"
+            className="mb-[var(--ds-space-4)] rounded-[var(--ds-radius-md)] border border-[var(--ds-color-accent)]/40 bg-[var(--ds-color-accent)]/10 p-[var(--ds-space-3)] text-[length:var(--ds-text-body)] text-[var(--ds-color-fg)]"
+          >
+            Account created. Please check your email for a verification link before signing in.
           </div>
         ) : null}
 
@@ -76,6 +95,7 @@ export default async function CustomerLoginPage(props: { searchParams: SearchPar
               type="email"
               autoComplete="email"
               required
+              defaultValue={emailDefault}
             />
           </Field>
           <Field label="Password">
