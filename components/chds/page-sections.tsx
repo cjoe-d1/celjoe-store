@@ -1,3 +1,4 @@
+import Image from "next/image";
 import clsx from "clsx";
 import { Container, Label, Stack } from "components/chds";
 
@@ -84,11 +85,13 @@ export function EditorialHero({
       )}
     >
       {imageUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
+        <Image
           src={imageUrl}
           alt=""
-          className="absolute inset-0 -z-10 h-full w-full object-cover"
+          fill
+          sizes="100vw"
+          className="object-cover"
+          priority
         />
       ) : null}
       <div
@@ -181,11 +184,12 @@ export function EditorialSplit({
         </Stack>
         <div className="relative aspect-[4/5] w-full overflow-hidden rounded-[var(--ds-radius-xl)] border border-[var(--ds-color-border)] bg-[var(--ds-color-surface-muted)]">
           {imageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <Image
               src={imageUrl}
               alt={imageAlt ?? ""}
-              className="h-full w-full object-cover"
+              fill
+              sizes="(min-width: 1024px) 50vw, 100vw"
+              className="object-cover"
             />
           ) : null}
         </div>

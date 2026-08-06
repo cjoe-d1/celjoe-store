@@ -20,7 +20,6 @@ export * from "components/chds/cart";
 export * from "components/chds/checkout";
 export * from "components/chds/table";
 export * from "components/chds/dashboard";
-export * from "components/chds/cms";
 export * from "components/chds/loading";
 export * from "components/chds/prose";
 export * from "components/chds/page-sections";

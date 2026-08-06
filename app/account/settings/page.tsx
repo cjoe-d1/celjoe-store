@@ -8,6 +8,7 @@ import {
 } from "lib/auth/actions";
 import { getCurrentCustomerSession } from "lib/auth/session";
 import { redirect } from "next/navigation";
+import { createSupabaseClient } from "lib/supabase/client";
 
 export const metadata: Metadata = {
   title: "Account Settings",
@@ -46,6 +47,22 @@ export default async function SettingsPage(props: { searchParams: SearchParams }
     : null;
   const passwordChanged = sp["password-changed"] === "1";
   const profileUpdated = sp["profile-updated"] === "1";
+
+  // Fetch phone from customers table for pre-fill — updates to
+  // auth metadata alone don't sync to this table until the action runs.
+  let phone = "";
+  try {
+    const supabase = createSupabaseClient();
+    const { data } = await supabase
+      .from("customers")
+      .select("phone")
+      .eq("auth_user_id", session.userId)
+      .maybeSingle();
+    phone = data?.phone ?? "";
+  } catch {
+    // Non-critical: fall back to session metadata.
+    phone = session.phone ?? "";
+  }
 
   const [firstName, ...rest] = (session.fullName ?? "").split(" ");
   const lastName = rest.join(" ");
@@ -114,6 +131,7 @@ export default async function SettingsPage(props: { searchParams: SearchParams }
                 name="phone"
                 type="tel"
                 autoComplete="tel"
+                defaultValue={phone}
                 className={inputCls}
               />
             </Field>

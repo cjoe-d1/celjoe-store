@@ -1,5 +1,84 @@
 import type { IWhatsAppProvider, WhatsAppProviderConfig } from "./types";
 
+// ------------------------------------------------------------------
+// Diagnostic helpers
+// ------------------------------------------------------------------
+
+/**
+ * Map low-level system error codes to human-readable labels.
+ */
+function classifyError(err: unknown): string {
+  if (!(err instanceof Error)) return "Unknown (not an Error instance)";
+
+  const msg = err.message.toLowerCase();
+  const code = (err as NodeJS.ErrnoException).code?.toLowerCase() ?? "";
+
+  if (code === "enotfound" || msg.includes("enotfound") || msg.includes("getaddrinfo")) {
+    return "DNS lookup failure (ENOTFOUND) — the hostname could not be resolved";
+  }
+  if (code === "econnrefused" || msg.includes("econnrefused") || msg.includes("connection refused")) {
+    return "Connection refused (ECONNREFUSED) — the server is not accepting connections";
+  }
+  if (code === "etimedout" || msg.includes("etimedout") || msg.includes("timeout")) {
+    return "Connection timed out (ETIMEDOUT)";
+  }
+  if (code === "econnreset" || msg.includes("econnreset") || msg.includes("connection reset")) {
+    return "Connection reset (ECONNRESET)";
+  }
+  if (
+    msg.includes("certificate") ||
+    msg.includes("ssl") ||
+    msg.includes("tls") ||
+    msg.includes("self signed") ||
+    msg.includes("unable to verify") ||
+    msg.includes("cert_")
+  ) {
+    return "SSL/TLS certificate error";
+  }
+  if (msg.includes("socket") || code === "eai_again") {
+    return "Socket error";
+  }
+
+  return err.name || "Unclassified network error";
+}
+
+/**
+ * Recursively log an error and its cause chain.
+ * Never throws, never suppresses properties.
+ */
+function logFetchError(err: unknown): void {
+  const seen = new Set<unknown>();
+
+  function recurse(e: unknown, depth: number): void {
+    if (e == null) return;
+    if (seen.has(e)) return;
+    seen.add(e);
+
+    const prefix = depth === 0 ? "[Evolution] Fetch error:" : `[Evolution]   cause[${depth}]:`;
+
+    if (e instanceof Error) {
+      const code = (e as NodeJS.ErrnoException).code ?? undefined;
+      console.error(prefix, {
+        name: e.name,
+        message: e.message,
+        code,
+        classification: classifyError(e),
+        stack: e.stack,
+        cause: e.cause == null ? undefined : "(see below)",
+        error: e,
+      });
+
+      if (e.cause != null) {
+        recurse(e.cause, depth + 1);
+      }
+    } else {
+      console.error(prefix, { type: typeof e, value: e });
+    }
+  }
+
+  recurse(err, 0);
+}
+
 /**
  * Hosted Evolution API provider.
  *
@@ -69,7 +148,9 @@ export class EvolutionWhatsAppProvider implements IWhatsAppProvider {
 
       return { ok: true };
     } catch (err) {
-      console.log("[Evolution] Fetch error:", err instanceof Error ? err.message : String(err));
+      // ---- DIAGNOSTIC LOG (temporary) ----
+      logFetchError(err);
+      // ------------------------------------
       return {
         ok: false,
         error: err instanceof Error ? err.message : "Evolution API unreachable",

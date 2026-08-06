@@ -287,6 +287,7 @@ export async function customerUpdateProfileAction(formData: FormData): Promise<v
   const firstName = String(formData.get("first_name") ?? "").trim();
   const lastName = String(formData.get("last_name") ?? "").trim();
   const phone = String(formData.get("phone") ?? "").trim();
+  const fullName = `${firstName}${lastName ? " " + lastName : ""}`.trim();
 
   let supabase;
   try {
@@ -295,16 +296,33 @@ export async function customerUpdateProfileAction(formData: FormData): Promise<v
     redirect(`/account/settings?error=service-unavailable`);
   }
 
+  // Update Supabase Auth user metadata
   const { error } = await supabase.auth.updateUser({
     data: {
       first_name: firstName,
       last_name: lastName,
-      full_name: `${firstName}${lastName ? " " + lastName : ""}`.trim(),
+      full_name: fullName,
       phone,
     },
   });
   if (error) {
     redirect(`/account/settings?error=${encodeURIComponent(error.message)}`);
+  }
+
+  // Sync to the customers table so orders, admin views, and
+  // address records reflect current profile information.
+  try {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const authUserId = sessionData.session?.user?.id;
+    if (authUserId) {
+      await supabase
+        .from("customers")
+        .update({ full_name: fullName, phone: phone || null })
+        .eq("auth_user_id", authUserId);
+    }
+  } catch {
+    // Non-critical: customer record may not exist yet — it will be
+    // created on first order or address save.
   }
 
   redirect(`/account/settings?profile-updated=1`);

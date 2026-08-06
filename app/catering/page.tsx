@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import { Suspense } from "react";
 
 import {
@@ -6,13 +7,13 @@ import {
   Container,
   EditorialQuote,
   EditorialSplit,
-  Label,
   SectionTitle,
-  Stack,
 } from "components/chds";
 import { EditorialHero } from "components/chds/page-sections";
+import { ContentSection, FeatureGrid, CTASection } from "components/shared";
 import Footer from "components/layout/footer";
 import { QuotationForm } from "components/forms/quotation-form";
+import { cateringContent } from "lib/content/catering";
 import { buildMetadata } from "lib/seo";
 import Link from "next/link";
 
@@ -23,172 +24,104 @@ export const metadata: Metadata = buildMetadata({
   path: "/catering",
 });
 
-const EVENT_CATEGORIES = [
-  {
-    title: "Weddings",
-    description:
-      "Rehearsal dinners, full receptions, late-night kitchen, morning-after brunches.",
-  },
-  {
-    title: "Corporate",
-    description:
-      "Board meetings, conferences, product launches, hosted dinners, end-of-year parties.",
-  },
-  {
-    title: "Birthdays",
-    description:
-      "Intimate suppers to larger gatherings — built around the guest of honour.",
-  },
-  {
-    title: "Outdoor",
-    description:
-      "Garden parties, picnics, and lawn dinners. We bring the kitchen with us.",
-  },
-  {
-    title: "Private Dining",
-    description:
-      "Reserved evenings at the Smokehouse or in your home. A dedicated chef, your menu.",
-  },
-  {
-    title: "Office Lunch",
-    description:
-      "Recurring weekly drops for teams. Hot, considered, and on time.",
-  },
-];
-
-const PACKAGES = [
-  {
-    name: "Drop",
-    description: "Single delivery, ready to serve. Best for office lunches and small gatherings.",
-    bullets: ["Plated or family style", "Up to 30 guests", "Setup optional"],
-  },
-  {
-    name: "Hosted",
-    description:
-      "We bring the chef, the kitchen, and the service. Best for weddings and corporate dinners.",
-    bullets: ["Up to 150 guests", "On-site service", "Bespoke menu"],
-  },
-  {
-    name: "Smokehouse",
-    description:
-      "Our signature live-fire experience at your location. Weekend-only availability.",
-    bullets: ["Live fire on-site", "Up to 80 guests", "Pairings included"],
-  },
-];
-
-const TESTIMONIALS = [
-  {
-    quote:
-      "Celjoe didn't just cater our wedding — they hosted it. The team was invisible, the food was unforgettable.",
-    attribution: "Tomi & Dara · Lekki",
-  },
-  {
-    quote:
-      "We use Celjoe for every product launch. Our guests always ask who's behind the kitchen.",
-    attribution: "Lead, a Yaba-based fintech",
-  },
-];
-
 async function CateringContent() {
+  const { hero, eventsSection, eventCategories, packagesSection, packages, whyCeljoe, testimonialsSection, testimonials, quotation } = cateringContent;
+
   return (
     <>
       <EditorialHero
-        eyebrow="Catering"
-        title="Service, not just a kitchen"
-        description={
-          <>
-            Catering is hospitality at scale. We plan with you, cook on
-            schedule, and run the room so your guests never have to think
-            about it.
-          </>
-        }
+        eyebrow={hero.eyebrow}
+        title={hero.title}
+        description={<>{hero.description}</>}
+        imageUrl={hero.image}
         cta={
           <div className="flex flex-wrap gap-[var(--ds-space-3)]">
             <Button asChild>
-              <Link href="#enquire">Request a quotation</Link>
+              <Link href={hero.primaryCta.href}>{hero.primaryCta.label}</Link>
             </Button>
             <Button variant="outline" asChild>
-              <Link href="/kitchen">View the menu</Link>
+              <Link href={hero.secondaryCta.href}>{hero.secondaryCta.label}</Link>
             </Button>
           </div>
         }
       />
 
       <Container className="py-[var(--ds-space-16)]">
-        <Stack gap="3">
-          <Label tone="muted">The Events</Label>
-          <SectionTitle>What we cater</SectionTitle>
-        </Stack>
-        <div className="mt-[var(--ds-space-8)] grid grid-cols-1 gap-[var(--ds-space-4)] sm:grid-cols-2 lg:grid-cols-3">
-          {EVENT_CATEGORIES.map((cat) => (
-            <article
-              key={cat.title}
-              className="flex flex-col gap-[var(--ds-space-3)] rounded-[var(--ds-radius-xl)] border border-[var(--ds-color-border)] bg-[var(--ds-color-surface)] p-[var(--ds-space-6)] transition-[box-shadow] duration-[var(--ds-duration-base)] hover:shadow-[var(--ds-shadow-md)]"
-            >
-              <Label tone="muted">Event</Label>
-              <h3 className="text-[length:var(--ds-text-h4)] font-[var(--ds-font-weight-medium)] text-[var(--ds-color-fg)]">
-                {cat.title}
-              </h3>
-              <p className="text-[length:var(--ds-text-body)] text-[var(--ds-color-muted)]">
-                {cat.description}
-              </p>
-            </article>
-          ))}
+        <div className="flex flex-col gap-[var(--ds-space-3)]">
+          <span className="text-[length:var(--ds-text-caption)] text-[var(--ds-color-muted)]">
+            {eventsSection.label}
+          </span>
+          <SectionTitle>{eventsSection.title}</SectionTitle>
         </div>
+        <FeatureGrid items={eventCategories} label="Event" />
       </Container>
 
       <Container className="py-[var(--ds-space-12)]">
-        <Stack gap="3">
-          <Label tone="muted">Packages</Label>
-          <SectionTitle>How we work</SectionTitle>
-        </Stack>
+        <div className="flex flex-col gap-[var(--ds-space-3)]">
+          <span className="text-[length:var(--ds-text-caption)] text-[var(--ds-color-muted)]">
+            {packagesSection.label}
+          </span>
+          <SectionTitle>{packagesSection.title}</SectionTitle>
+        </div>
         <div className="mt-[var(--ds-space-8)] grid grid-cols-1 gap-[var(--ds-space-6)] md:grid-cols-3">
-          {PACKAGES.map((p) => (
+          {packages.map((p) => (
             <div
               key={p.name}
-              className="flex flex-col gap-[var(--ds-space-4)] rounded-[var(--ds-radius-xl)] border border-[var(--ds-color-border)] bg-[var(--ds-color-surface)] p-[var(--ds-space-8)]"
+              className="flex flex-col overflow-hidden rounded-[var(--ds-radius-xl)] border border-[var(--ds-color-border)] bg-[var(--ds-color-surface)]"
             >
-              <Label tone="muted">Package</Label>
-              <h3 className="text-[length:var(--ds-text-h2)] font-[var(--ds-font-weight-medium)] text-[var(--ds-color-fg)]">
-                {p.name}
-              </h3>
-              <p className="text-[length:var(--ds-text-body)] text-[var(--ds-color-muted)]">
-                {p.description}
-              </p>
-              <ul className="mt-[var(--ds-space-2)] flex flex-col gap-[var(--ds-space-2)] text-[length:var(--ds-text-caption)] text-[var(--ds-color-fg)]">
-                {p.bullets.map((b) => (
-                  <li key={b} className="flex items-start gap-[var(--ds-space-2)]">
-                    <span aria-hidden className="text-[var(--ds-color-accent)]">
-                      ·
-                    </span>
-                    <span>{b}</span>
-                  </li>
-                ))}
-              </ul>
+              {p.image ? (
+                <div className="relative aspect-[3/2] w-full">
+                  <Image
+                    src={p.image}
+                    alt={p.name}
+                    fill
+                    sizes="(min-width: 768px) 33vw, 100vw"
+                    className="object-cover"
+                  />
+                </div>
+              ) : null}
+              <div className="flex flex-col gap-[var(--ds-space-4)] p-[var(--ds-space-8)]">
+                <span className="text-[length:var(--ds-text-caption)] text-[var(--ds-color-muted)]">
+                  Package
+                </span>
+                <h3 className="text-[length:var(--ds-text-h2)] font-[var(--ds-font-weight-medium)] text-[var(--ds-color-fg)]">
+                  {p.name}
+                </h3>
+                <p className="text-[length:var(--ds-text-body)] text-[var(--ds-color-muted)]">
+                  {p.description}
+                </p>
+                <ul className="mt-[var(--ds-space-2)] flex flex-col gap-[var(--ds-space-2)] text-[length:var(--ds-text-caption)] text-[var(--ds-color-fg)]">
+                  {p.bullets.map((b) => (
+                    <li key={b} className="flex items-start gap-[var(--ds-space-2)]">
+                      <span aria-hidden className="text-[var(--ds-color-accent)]">
+                        ·
+                      </span>
+                      <span>{b}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
           ))}
         </div>
       </Container>
 
       <EditorialSplit
-        eyebrow="Why Celjoe"
-        title="One team, end to end"
-        body={
-          <>
-            We don&apos;t sub-contract. The chef who plans your menu is the
-            chef who cooks it. That continuity is what makes the difference —
-            it&apos;s also why our calendar fills up.
-          </>
-        }
+        eyebrow={whyCeljoe.eyebrow}
+        title={whyCeljoe.title}
+        body={<>{whyCeljoe.body}</>}
+        imageUrl={whyCeljoe.image}
       />
 
       <Container className="pb-[var(--ds-space-16)]">
-        <Stack gap="3" className="items-center text-center">
-          <Label tone="muted">Guests</Label>
-          <SectionTitle className="text-center">What they say</SectionTitle>
-        </Stack>
+        <div className="flex flex-col gap-[var(--ds-space-3)] items-center text-center">
+          <span className="text-[length:var(--ds-text-caption)] text-[var(--ds-color-muted)]">
+            {testimonialsSection.label}
+          </span>
+          <SectionTitle className="text-center">{testimonialsSection.title}</SectionTitle>
+        </div>
         <div className="mt-[var(--ds-space-8)] grid grid-cols-1 gap-[var(--ds-space-6)] md:grid-cols-2">
-          {TESTIMONIALS.map((t) => (
+          {testimonials.map((t) => (
             <EditorialQuote
               key={t.attribution}
               className="rounded-[var(--ds-radius-xl)] border border-[var(--ds-color-border)] bg-[var(--ds-color-surface)] p-[var(--ds-space-8)]"
@@ -206,14 +139,15 @@ async function CateringContent() {
 
       <Container className="pb-[var(--ds-space-24)]" id="enquire">
         <div className="rounded-[var(--ds-radius-xl)] border border-[var(--ds-color-border)] bg-[var(--ds-color-surface)] p-[var(--ds-space-10)] md:p-[var(--ds-space-16)]">
-          <Stack gap="3">
-            <Label tone="muted">Quotation</Label>
-            <SectionTitle>Request a consultation</SectionTitle>
+          <div className="flex flex-col gap-[var(--ds-space-3)]">
+            <span className="text-[length:var(--ds-text-caption)] text-[var(--ds-color-muted)]">
+              {quotation.label}
+            </span>
+            <SectionTitle>{quotation.title}</SectionTitle>
             <p className="max-w-prose text-[length:var(--ds-text-body)] text-[var(--ds-color-muted)]">
-              Tell us about the event. We&apos;ll reply with availability,
-              suggested menus, and a clear quotation.
+              {quotation.description}
             </p>
-          </Stack>
+          </div>
 
           <QuotationForm />
         </div>
@@ -230,7 +164,7 @@ function CateringSkeleton() {
   );
 }
 
-export default function CateringPage() {
+export default async function CateringPage() {
   return (
     <main>
       <Suspense fallback={<CateringSkeleton />}>

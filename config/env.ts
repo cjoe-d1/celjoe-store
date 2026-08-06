@@ -25,18 +25,24 @@ export const env = {
   vercel: {
     productionUrl: getOptional("VERCEL_PROJECT_PRODUCTION_URL"),
   },
-  /** Hosted Evolution API configuration (Phase G). */
+  /** Hosted Evolution API configuration — INACTIVE (Phase G redesign).
+   *  Preserved for future server-side WhatsApp integration. */
   evolution: {
     apiUrl: getOptional("EVOLUTION_API_URL") ?? "",
     apiKey: getOptional("EVOLUTION_API_KEY") ?? "",
     instance: getOptional("EVOLUTION_INSTANCE") ?? "",
     businessNumber: getOptional("BUSINESS_WHATSAPP_NUMBER") ?? "",
   },
-  /** WhatsApp feature toggle and legacy config. */
+  /** WhatsApp — wa.me link configuration only (no server-side sending). */
   whatsapp: {
-    enabled: getOptional("WHATSAPP_ENABLED") === "true",
     number: getOptional("WHATSAPP_NUMBER") ?? "",
-    businessNumber: getOptional("BUSINESS_WHATSAPP_NUMBER") ?? "",
+    businessNumber: getOptional("NEXT_PUBLIC_BUSINESS_WHATSAPP") ?? "",
+  },
+  /** Push Notifications (web-push via VAPID). */
+  push: {
+    enabled: getOptional("PUSH_NOTIFICATIONS_ENABLED") === "true",
+    vapidPublicKey: getOptional("NEXT_PUBLIC_VAPID_PUBLIC_KEY") ?? "",
+    vapidSubject: getOptional("VAPID_SUBJECT") ?? "mailto:admin@celjoe.com",
   },
 } as const;
 

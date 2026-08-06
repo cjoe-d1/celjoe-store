@@ -249,7 +249,7 @@ export function HomeGuestStoriesSection({
   stories,
 }: {
   title: string;
-  stories: { quote: string; attribution?: string | null }[];
+  stories: { quote: string; attribution?: string | null; avatarUrl?: string | null }[];
 }) {
   if (!stories.length) return null;
 
@@ -261,12 +261,25 @@ export function HomeGuestStoriesSection({
           <div className="grid grid-cols-1 gap-[var(--ds-space-4)] md:grid-cols-2">
             {stories.map((story) => (
               <Card key={story.quote} variant="editorial">
+                <div className="flex items-center gap-[var(--ds-space-4)] mb-[var(--ds-space-4)]">
+                  {story.avatarUrl ? (
+                    <Image
+                      src={story.avatarUrl}
+                      alt={story.attribution ?? ""}
+                      width={48}
+                      height={48}
+                      className="rounded-full object-cover border-2 border-[var(--ds-color-border)]"
+                    />
+                  ) : (
+                    <div className="h-12 w-12 rounded-full bg-[var(--ds-color-surface-muted)] border-2 border-[var(--ds-color-border)]" />
+                  )}
+                  {story.attribution ? (
+                    <div className="text-[length:var(--ds-text-caption)] font-[var(--ds-font-weight-medium)] text-[var(--ds-color-fg)]">
+                      {story.attribution}
+                    </div>
+                  ) : null}
+                </div>
                 <EditorialQuote>{story.quote}</EditorialQuote>
-                {story.attribution ? (
-                  <div className="mt-[var(--ds-space-3)] text-[length:var(--ds-text-caption)] text-[var(--ds-color-muted)]">
-                    {story.attribution}
-                  </div>
-                ) : null}
               </Card>
             ))}
           </div>

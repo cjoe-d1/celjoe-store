@@ -16,6 +16,7 @@ import { requireAdmin } from "lib/auth/guards";
 import { Suspense } from "react";
 import { DashboardSkeleton } from "./orders/skeleton";
 import { formatMoney } from "lib/supabase/orders";
+import { PushSubscribeButton } from "components/pwa/push-subscribe-button";
 
 export const dynamic = "force-dynamic";
 
@@ -183,6 +184,12 @@ async function DashboardContent({ greetingName }: { greetingName: string }) {
               <Button asChild variant="outline">
                 <Link href="/admin/orders">All orders</Link>
               </Button>
+            </div>
+            <SectionTitle className="mt-[var(--ds-space-6)]">
+              Notifications
+            </SectionTitle>
+            <div className="mt-[var(--ds-space-2)]">
+              <PushSubscribeButton />
             </div>
           </ChartWrapper>
 

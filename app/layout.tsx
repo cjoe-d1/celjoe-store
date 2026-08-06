@@ -7,6 +7,7 @@ import "@fontsource/montserrat/700.css";
 import { getCart } from "lib/supabase/cart";
 import { ReactNode } from "react";
 import { AppProviders } from "providers/app-providers";
+import { PwaProvider } from "components/pwa/pwa-provider";
 import "./globals.css";
 import { baseUrl } from "lib/utils";
 
@@ -22,6 +23,15 @@ export const metadata = {
     follow: true,
     index: true,
   },
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "CELJOE Admin",
+  },
+  other: {
+    "mobile-web-app-capable": "yes",
+  },
 };
 
 export default async function RootLayout({
@@ -36,6 +46,7 @@ export default async function RootLayout({
     <html lang="en" style={{ "--font-montserrat": `"Montserrat", sans-serif` } as React.CSSProperties} data-theme="celjoe">
       <body className="bg-[var(--ds-color-bg)] [font-family:var(--ds-font-sans)] text-[var(--ds-color-fg)] selection:bg-[var(--ds-color-accent)] selection:text-white">
         <AppProviders cartPromise={cart}>
+          <PwaProvider />
           <Navbar />
           <main>
             {children}

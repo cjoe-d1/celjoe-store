@@ -23,6 +23,7 @@ export type CustomerSession = {
   userId: string;
   email: string;
   fullName: string;
+  phone: string | null;
 };
 
 const ADMIN_SESSION_COOKIE = "celjoe_session";
@@ -154,6 +155,7 @@ export async function getCurrentCustomerSession(): Promise<CustomerSession | nul
         (user.user_metadata?.full_name as string | undefined) ??
         (user.user_metadata?.first_name as string | undefined) ??
         "Customer",
+      phone: (user.user_metadata?.phone as string | null) ?? null,
     };
   } catch {
     return null;

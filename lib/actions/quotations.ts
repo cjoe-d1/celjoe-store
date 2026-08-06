@@ -9,12 +9,28 @@ import {
   updateQuotation,
   type QuotationStatus,
 } from "lib/supabase/admin/quotations";
-import {
-  notifyAdminNewQuotation,
-  notifyCustomerQuotationStatus,
-} from "lib/services/whatsapp";
+import { sendPushToAllAdmins } from "lib/push/send";
+import { buildCustomerQuotationMessage } from "lib/services/whatsapp";
 
-type ActionResult = { ok: true } | { ok: false; error: string };
+type AdminActionResult =
+  | { ok: true }
+  | { ok: false; error: string };
+
+type ActionResult =
+  | {
+      ok: true;
+      quoteNumber: string;
+      data: {
+        customer_name: string;
+        customer_phone: string;
+        customer_email: string;
+        event_type?: string;
+        guest_count?: number;
+        event_date?: string;
+        notes?: string;
+      };
+    }
+  | { ok: false; error: string };
 
 // ---------------------------------------------------------------------------
 // Customer-facing: submit a quotation request (no auth required)
@@ -52,9 +68,23 @@ export async function submitQuotationAction(
       notes,
     });
 
-    // Notify admin via WhatsApp — must never block quotation creation
+    // Push notification to admin devices — must never block quotation creation
     try {
-      await notifyAdminNewQuotation({
+      await sendPushToAllAdmins({
+        title: "New Quotation Request",
+        body: `${customerName} — ${eventType ?? "General enquiry"}${guestCount ? ` (${guestCount} guests)` : ""}`,
+        url: `/admin/quotations`,
+        tag: `quotation:${quotation.quote_number}`,
+      });
+    } catch (pushError) {
+      console.error("[Quotations] Push notification failed (non-blocking):", pushError);
+    }
+
+    revalidatePath("/admin/quotations");
+    return {
+      ok: true,
+      quoteNumber: quotation.quote_number,
+      data: {
         customer_name: customerName,
         customer_phone: customerPhone,
         customer_email: customerEmail,
@@ -62,14 +92,8 @@ export async function submitQuotationAction(
         guest_count: guestCount,
         event_date: eventDate,
         notes,
-        quote_number: quotation.quote_number,
-      });
-    } catch (waError) {
-      console.error("[WhatsApp] Quotation alert failed (non-blocking):", waError);
-    }
-
-    revalidatePath("/admin/quotations");
-    return { ok: true };
+      },
+    };
   } catch (err) {
     console.error("Quotation submission error:", err);
     return {
@@ -88,7 +112,7 @@ export async function updateQuotationStatusAction(
   status: QuotationStatus,
   quotedAmount?: number | null,
   adminNotes?: string | null,
-): Promise<ActionResult> {
+): Promise<AdminActionResult> {
   try {
     const session = await requireAdmin();
     const { ip, userAgent } = await getClientMetadata();
@@ -112,20 +136,6 @@ export async function updateQuotationStatusAction(
       ),
     );
 
-    // Notify customer if status changed to "quoted" or "accepted" — non-blocking
-    if (status === "quoted" || status === "accepted") {
-      try {
-        await notifyCustomerQuotationStatus({
-          quote_number: quotation.quote_number,
-          status,
-          quoted_amount: quotation.quoted_amount,
-          customer_phone: quotation.customer_phone,
-        });
-      } catch (waError) {
-        console.error("[Quotations] WhatsApp notification failed (non-blocking):", waError);
-      }
-    }
-
     revalidatePath("/admin/quotations");
     revalidatePath(`/admin/quotations/${id}`);
     return { ok: true };
@@ -144,7 +154,7 @@ export async function updateQuotationStatusAction(
 export async function updateQuotationNotesAction(
   id: string,
   adminNotes: string,
-): Promise<ActionResult> {
+): Promise<AdminActionResult> {
   try {
     const session = await requireAdmin();
     const { ip, userAgent } = await getClientMetadata();

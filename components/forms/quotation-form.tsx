@@ -9,6 +9,9 @@ import {
   TextInput,
 } from "components/chds";
 import { submitQuotationAction } from "lib/actions/quotations";
+import { buildCustomerQuotationWaText, waChatUrl } from "lib/services/whatsapp";
+
+const BUSINESS_WHATSAPP = process.env.NEXT_PUBLIC_BUSINESS_WHATSAPP ?? "";
 
 export function QuotationForm() {
   const [state, formAction, isPending] = useActionState(
@@ -18,19 +21,65 @@ export function QuotationForm() {
 
   const isSuccess = state?.ok === true;
   const errorMessage = state?.ok === false ? state.error : null;
+  const quoteNumber = state?.ok === true ? state.quoteNumber : null;
 
-  if (isSuccess) {
+  if (isSuccess && quoteNumber && state.data) {
+    const waText = buildCustomerQuotationWaText({
+      customer_name: state.data.customer_name,
+      customer_phone: state.data.customer_phone,
+      customer_email: state.data.customer_email,
+      quote_number: quoteNumber,
+      event_type: state.data.event_type ?? null,
+      guest_count: state.data.guest_count ?? null,
+      event_date: state.data.event_date ?? null,
+      notes: state.data.notes ?? null,
+    });
+
     return (
       <div className="rounded-[var(--ds-radius-xl)] border border-[var(--ds-color-border)] bg-[var(--ds-color-surface)] p-[var(--ds-space-10)] text-center md:p-[var(--ds-space-16)]">
-        <p className="text-[length:var(--ds-text-h4)] text-[var(--ds-color-fg)]">
+        <div className="mb-[var(--ds-space-4)] inline-flex h-[var(--ds-space-16)] w-[var(--ds-space-16)] items-center justify-center rounded-full bg-[var(--ds-color-success)]/10">
+          <svg
+            className="h-[var(--ds-space-8)] w-[var(--ds-space-8)] text-[var(--ds-color-success)]"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M5 13l4 4L19 7"
+            />
+          </svg>
+        </div>
+
+        <h2 className="text-[length:var(--ds-text-h3)] text-[var(--ds-color-fg)]">
           Thank you for your enquiry.
+        </h2>
+
+        <p className="mt-[var(--ds-space-2)] text-[length:var(--ds-text-body)] text-[var(--ds-color-muted)]">
+          Your quotation <strong>{quoteNumber}</strong> has been received. We will review it and get back to you within 24 hours.
         </p>
-        <p className="mt-[var(--ds-space-3)] text-[var(--ds-color-muted)]">
-          We&apos;ll review your request and get back to you within 24 hours,
-          typically via WhatsApp.
-        </p>
+
+        {BUSINESS_WHATSAPP ? (
+          <div className="mt-[var(--ds-space-6)]">
+            <p className="mb-[var(--ds-space-3)] text-[length:var(--ds-text-caption)] text-[var(--ds-color-muted)]">
+              For a faster response, send us the details on WhatsApp.
+            </p>
+            <Button asChild>
+              <a
+                href={waChatUrl(BUSINESS_WHATSAPP, waText)}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Continue on WhatsApp
+              </a>
+            </Button>
+          </div>
+        ) : null}
+
         <div className="mt-[var(--ds-space-6)] flex flex-wrap justify-center gap-[var(--ds-space-3)]">
-          <Button asChild>
+          <Button variant={BUSINESS_WHATSAPP ? "outline" : "primary"} asChild>
             <a href="/kitchen">Browse the kitchen</a>
           </Button>
           <Button variant="outline" asChild>
