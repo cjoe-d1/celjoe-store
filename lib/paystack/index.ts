@@ -29,15 +29,6 @@ function paystackSecretKey(): string {
   return key;
 }
 
-/** Paystack public key — safe for client-side inline widget. */
-export function paystackPublicKey(): string {
-  const key =
-    process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY ??
-    process.env.PAYSTACK_PUBLIC_KEY ?? "";
-  if (!key) throw new Error("Missing NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY environment variable");
-  return key;
-}
-
 export const CURRENCY = "NGN";
 
 // --------------------------------------------------------------------------
