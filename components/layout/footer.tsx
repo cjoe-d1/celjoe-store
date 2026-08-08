@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { Container, Label } from "components/chds";
-import { LogoIcon } from "components/icons";
+import LogoImage from "components/logo";
 import FooterMenu from "components/layout/footer-menu";
 import { getCategories } from "lib/supabase/categories";
 import { getPublishedPageLinks } from "lib/supabase/pages";
@@ -42,7 +42,7 @@ export default async function Footer() {
               className="flex items-center gap-[var(--ds-space-3)] text-[var(--ds-color-fg)]"
               href="/"
             >
-              <LogoIcon className="h-6 w-auto" />
+              <LogoImage className="h-6" />
             </Link>
             <p className="mt-[var(--ds-space-4)] max-w-sm text-[length:var(--ds-text-body)] leading-relaxed text-[var(--ds-color-muted)]">
               From our kitchen to your table — crafted with care, served with heart.

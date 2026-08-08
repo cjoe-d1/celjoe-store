@@ -1,4 +1,3 @@
-export { default as LogoIcon } from "components/icons/logo";
 export {
   Bars3Icon,
   XMarkIcon,

@@ -1,6 +1,6 @@
 import ChdsCartDrawer from "components/cart/chds-cart-drawer";
 import { Container, SearchBar, SearchBarSkeleton } from "components/chds";
-import { LogoIcon } from "components/icons";
+import LogoImage from "components/logo";
 import Link from "next/link";
 import { Suspense } from "react";
 import NavbarChrome from "./chrome";
@@ -37,7 +37,7 @@ export async function Navbar() {
                 aria-label={SITE_NAME ?? "Home"}
                 className="flex items-center gap-[var(--ds-space-3)] text-[var(--ds-color-fg)] transition-opacity hover:opacity-80"
               >
-                <LogoIcon className="h-6 w-auto" />
+                <LogoImage className="h-6" />
               </Link>
               <ul className="hidden items-center gap-[var(--ds-space-7)] md:flex">
                 {primaryNav.map((item) => (

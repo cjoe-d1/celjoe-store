@@ -4,7 +4,7 @@ import clsx from "clsx";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
-import { LogoIcon } from "components/icons";
+import LogoImage from "components/logo";
 import {
   AdminSidebar,
   type AdminNavItem,
@@ -267,7 +267,7 @@ export function AdminShell({
             aria-label="Operations home"
             className="flex items-center gap-[var(--ds-space-3)] text-[var(--ds-color-fg)]"
           >
-            <LogoIcon className="h-6 w-auto" />
+            <LogoImage className="h-6" />
             <span className="text-[length:var(--ds-text-label)] uppercase tracking-[0.18em] text-[var(--ds-color-muted)]">
               Operations
             </span>
@@ -296,7 +296,7 @@ export function AdminShell({
                 onClick={() => setMobileOpen(false)}
                 className="flex items-center gap-[var(--ds-space-2)] text-[var(--ds-color-fg)]"
               >
-                <LogoIcon className="h-6 w-auto" />
+                <LogoImage className="h-6" />
               </Link>
               <button
                 type="button"

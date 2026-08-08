@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { LogoIcon } from "components/icons";
+import LogoImage from "components/logo";
 import { signInAction } from "lib/auth/actions";
 import { getCurrentSession } from "lib/auth/session";
 import { Button, Field, PasswordInput, TextInput } from "components/chds";
@@ -38,7 +38,7 @@ export default async function AdminLoginPage(props: { searchParams: SearchParams
     <div className="min-h-screen bg-[var(--ds-color-bg)]">
       <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center gap-[var(--ds-space-8)] px-[var(--ds-space-6)] py-[var(--ds-space-12)]">
         <div className="flex flex-col items-center gap-[var(--ds-space-3)] text-center">
-          <LogoIcon className="h-8 w-auto" />
+          <LogoImage className="h-8" />
           <div className="text-[length:var(--ds-text-label)] uppercase tracking-[0.18em] text-[var(--ds-color-muted)]">
             Hospitality Operations Centre
           </div>

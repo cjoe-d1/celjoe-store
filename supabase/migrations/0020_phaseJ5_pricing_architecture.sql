@@ -6,11 +6,12 @@
 -- 1. Add has_variants column (default: simple product)
 ALTER TABLE products ADD COLUMN IF NOT EXISTS has_variants boolean NOT NULL DEFAULT false;
 
--- 2. Mark existing products that have variants as variant products
+-- 2. Mark existing products that have non-Default variants as variant products.
+-- Simple products have a system-generated "Default" variant; they remain has_variants=false.
 UPDATE products 
 SET has_variants = true 
 WHERE id IN (
-  SELECT DISTINCT product_id FROM product_variants
+  SELECT DISTINCT product_id FROM product_variants WHERE name != 'Default'
 );
 
 -- 3. Create default variants for simple products that have none
@@ -32,3 +33,8 @@ AND p.id NOT IN (SELECT product_id FROM product_variants);
 UPDATE products 
 SET price = 0 
 WHERE has_variants = true AND price != 0;
+
+-- 5. Fix RLS: grant anonymous read access to product_variants
+-- (public-facing pages use the anon key and need to read variant data)
+DROP POLICY IF EXISTS "product_variants_read_anon" ON public.product_variants;
+CREATE POLICY "product_variants_read_anon" ON public.product_variants FOR SELECT TO anon USING (true);

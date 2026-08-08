@@ -2,14 +2,11 @@ import {
   Badge,
   Button,
   Container,
-  EditorialQuote,
   Label,
   ProductCard,
   ProductGallery,
   ProductMeta,
   RelatedProductsShell,
-  SectionTitle,
-  Stack,
 } from "components/chds";
 import Footer from "components/layout/footer";
 import { HIDDEN_PRODUCT_TAG } from "lib/constants";
@@ -21,6 +18,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { ProductInteractive } from "./product-interactive";
+
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata(props: {
   params: Promise<{ handle: string }>;
@@ -176,114 +175,8 @@ export default async function ProductPage(props: {
       </div>
 
       <Container className="py-[var(--ds-space-16)]">
-        <div className="grid grid-cols-1 gap-[var(--ds-space-12)] lg:grid-cols-[1fr_320px]">
-          <Stack gap="10">
-            <section aria-labelledby="ingredients">
-              <Stack gap="3">
-                <Label tone="muted">Ingredients</Label>
-                <SectionTitle>What's inside</SectionTitle>
-                <p className="text-[length:var(--ds-text-body)] text-[var(--ds-color-muted)]">
-                  We source what we can name, and we tell you where it came from.
-                </p>
-              </Stack>
-              <ul className="mt-[var(--ds-space-6)] grid grid-cols-1 gap-[var(--ds-space-2)] sm:grid-cols-2">
-                {[
-                  "Long-grain rice, sourced from a local mill",
-                  "Red bell peppers, plum tomatoes, scotch bonnets",
-                  "Onion, garlic, ginger, thyme, bay leaf",
-                  "House-made chicken stock",
-                  "Cold-pressed palm oil",
-                  "Sea salt, freshly cracked black pepper",
-                ].map((ing) => (
-                  <li
-                    key={ing}
-                    className="flex items-start gap-[var(--ds-space-3)] rounded-[var(--ds-radius-md)] border border-[var(--ds-color-border)] bg-[var(--ds-color-surface)] p-[var(--ds-space-3)] text-[length:var(--ds-text-body)] text-[var(--ds-color-fg)]"
-                  >
-                    <span aria-hidden className="mt-[6px] inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--ds-color-accent)]" />
-                    <span>{ing}</span>
-                  </li>
-                ))}
-              </ul>
-            </section>
-
-            <section aria-labelledby="preparation">
-              <Stack gap="3">
-                <Label tone="muted">Preparation</Label>
-                <SectionTitle>How it&apos;s made</SectionTitle>
-              </Stack>
-              <ol className="mt-[var(--ds-space-6)] space-y-[var(--ds-space-4)] text-[length:var(--ds-text-body)] text-[var(--ds-color-muted)]">
-                <li>
-                  <span className="font-[var(--ds-font-weight-medium)] text-[var(--ds-color-fg)]">1 · Par-cook the rice.</span>{" "}
-                  The grain is par-cooked in salted water until just underdone, then rested.
-                </li>
-                <li>
-                  <span className="font-[var(--ds-font-weight-medium)] text-[var(--ds-color-fg)]">2 · Build the base.</span>{" "}
-                  The pepper mix is fried slowly in palm oil for 30+ minutes until the
-                  oils split. This is the colour, and the flavour.
-                </li>
-                <li>
-                  <span className="font-[var(--ds-font-weight-medium)] text-[var(--ds-color-fg)]">3 · Steam together.</span>{" "}
-                  The rice and base are combined and steamed, low and slow, until the
-                  bottom sets into a socarrat.
-                </li>
-                <li>
-                  <span className="font-[var(--ds-font-weight-medium)] text-[var(--ds-color-fg)]">4 · Plate to order.</span>{" "}
-                  Each portion is finished in a hot pan and plated just before it leaves the kitchen.
-                </li>
-              </ol>
-            </section>
-
-            <section aria-labelledby="nutrition">
-              <Stack gap="3">
-                <Label tone="muted">Nutrition &amp; allergens</Label>
-                <SectionTitle>What to know</SectionTitle>
-              </Stack>
-              <div className="mt-[var(--ds-space-6)] grid grid-cols-2 gap-[var(--ds-space-3)] sm:grid-cols-4">
-                {[
-                  { k: "Energy", v: "—" },
-                  { k: "Protein", v: "—" },
-                  { k: "Carbs", v: "—" },
-                  { k: "Allergens", v: "Gluten" },
-                ].map((m) => (
-                  <div
-                    key={m.k}
-                    className="rounded-[var(--ds-radius-md)] border border-[var(--ds-color-border)] bg-[var(--ds-color-surface)] p-[var(--ds-space-4)]"
-                  >
-                    <div className="text-[length:var(--ds-text-label)] uppercase tracking-wide text-[var(--ds-color-muted)]">
-                      {m.k}
-                    </div>
-                    <div className="mt-[var(--ds-space-1)] text-[length:var(--ds-text-h4)] font-[var(--ds-font-weight-medium)] text-[var(--ds-color-fg)]">
-                      {m.v}
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <p className="mt-[var(--ds-space-3)] text-[length:var(--ds-text-caption)] text-[var(--ds-color-muted)]">
-                Full nutrition and allergen details will be available once our kitchen completes the audit.
-              </p>
-            </section>
-
-            <section aria-labelledby="reviews">
-              <Stack gap="3">
-                <Label tone="muted">Guests</Label>
-                <SectionTitle>Reviews</SectionTitle>
-              </Stack>
-              <EditorialQuote className="mt-[var(--ds-space-6)] rounded-[var(--ds-radius-xl)] border border-[var(--ds-color-border)] bg-[var(--ds-color-surface)] p-[var(--ds-space-8)]">
-                <p className="text-[length:var(--ds-text-body)] leading-[var(--ds-leading-body)] text-[var(--ds-color-fg)]">
-                  &ldquo;The kind of meal you finish and immediately want to order again.
-                  You can taste the patience in it.&rdquo;
-                </p>
-                <footer className="mt-[var(--ds-space-3)] text-[length:var(--ds-text-caption)] text-[var(--ds-color-muted)]">
-                  — A returning guest
-                </footer>
-              </EditorialQuote>
-              <p className="mt-[var(--ds-space-3)] text-[length:var(--ds-text-caption)] text-[var(--ds-color-muted)]">
-                Verified guest reviews land once our review programme is live.
-              </p>
-            </section>
-          </Stack>
-
-          <aside className="hidden lg:block">
+        <div className="flex justify-center">
+          <aside className="w-full max-w-[320px]">
             <div className="sticky top-[var(--ds-space-24)] rounded-[var(--ds-radius-xl)] border border-[var(--ds-color-border)] bg-[var(--ds-color-surface)] p-[var(--ds-space-6)] shadow-[var(--ds-shadow-sm)]">
               <Label tone="muted">Quick add</Label>
               <div className="mt-[var(--ds-space-4)]">

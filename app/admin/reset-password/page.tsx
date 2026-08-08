@@ -1,5 +1,5 @@
 import { Field, PasswordInput, Button } from "components/chds";
-import { LogoIcon } from "components/icons";
+import LogoImage from "components/logo";
 import { buildMetadata } from "lib/seo";
 
 export const dynamic = "force-dynamic";
@@ -15,7 +15,7 @@ export default function AdminResetPasswordPage() {
   return (
     <div className="min-h-screen bg-[var(--ds-color-bg)]">
       <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center gap-[var(--ds-space-4)] px-[var(--ds-space-6)] py-[var(--ds-space-12)]">
-        <LogoIcon className="mx-auto h-8 w-auto" />
+        <LogoImage className="mx-auto h-8" />
         <h1 className="text-center text-[length:var(--ds-text-h2)] font-[var(--ds-font-weight-medium)] tracking-tight text-[var(--ds-color-fg)]">
           Set a new password
         </h1>

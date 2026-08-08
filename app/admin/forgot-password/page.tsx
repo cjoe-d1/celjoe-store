@@ -1,5 +1,5 @@
 import { Field, EmailInput, Button } from "components/chds";
-import { LogoIcon } from "components/icons";
+import LogoImage from "components/logo";
 import { requestPasswordResetAction } from "lib/auth/actions";
 import { buildMetadata } from "lib/seo";
 
@@ -21,7 +21,7 @@ export default async function AdminForgotPassword(props: {
   if (sp.sent) {
     return (
       <CenteredCard>
-        <LogoIcon className="mx-auto h-8 w-auto" />
+        <LogoImage className="mx-auto h-8" />
         <h1 className="mt-[var(--ds-space-3)] text-center text-[length:var(--ds-text-h3)] font-[var(--ds-font-weight-medium)] text-[var(--ds-color-fg)]">
           Check your email
         </h1>
@@ -42,7 +42,7 @@ export default async function AdminForgotPassword(props: {
 
   return (
     <CenteredCard>
-      <LogoIcon className="mx-auto h-8 w-auto" />
+      <LogoImage className="mx-auto h-8" />
       <h1 className="mt-[var(--ds-space-3)] text-center text-[length:var(--ds-text-h3)] font-[var(--ds-font-weight-medium)] text-[var(--ds-color-fg)]">
         Reset your password
       </h1>
