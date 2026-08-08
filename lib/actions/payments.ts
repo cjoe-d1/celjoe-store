@@ -21,6 +21,7 @@ import {
 } from "lib/paystack";
 import { requireAdmin } from "lib/auth/guards";
 import { db } from "lib/supabase/admin";
+import { sendPushToAllAdmins } from "lib/push/send";
 
 // --------------------------------------------------------------------------
 // Types
@@ -180,7 +181,7 @@ async function settlePayment(
   // ---- 6. Cross-verify against the order total ----
   const { data: orderRow, error: orderErr } = await db
     .from("orders")
-    .select("id, total, payment_status")
+    .select("id, total, payment_status, cart_id, order_number, customer_name")
     .eq("id", paymentRow.order_id)
     .maybeSingle();
 
@@ -267,6 +268,35 @@ async function settlePayment(
 
   console.log(`[Payments] Payment ${reference} settled via ${source} — Order ${orderRow.id} marked paid.`);
 
+  // ---- 9. Clear the specific cart associated with this order ----
+  // Only clear after successful server-side payment verification.
+  // Never clear on pending or failed payments.
+  const cartId = (orderRow as Record<string, unknown>).cart_id as string | undefined;
+  if (cartId) {
+    try {
+      // Delete cart items first (FK constraint), then the cart
+      await db.from("cart_items").delete().eq("cart_id", cartId);
+      await db.from("carts").delete().eq("id", cartId);
+      console.log(`[Payments] Cart ${cartId} cleared for order ${orderRow.id}`);
+    } catch (cartErr) {
+      // Cart clearing failure is non-fatal — order is already settled.
+      console.error("[Payments] Cart clearing failed:", cartErr);
+    }
+  }
+
+  // ---- 10. Send push notification to admin devices ----
+  // Non-blocking — push failure must not roll back settlement.
+  const orderNumber = (orderRow as Record<string, unknown>).order_number as string | undefined;
+  const customerName = (orderRow as Record<string, unknown>).customer_name as string | undefined;
+  sendPushToAllAdmins({
+    title: "New Paid Order",
+    body: `${orderNumber ?? "Order"} — ${customerName ?? "Customer"} — ₦${paystackAmountNaira.toLocaleString()}`,
+    url: `/admin/orders/${orderRow.id}`,
+    tag: `order:${orderNumber}`,
+  }).catch((pushErr) =>
+    console.error("[Payments] Push notification failed:", pushErr),
+  );
+
   return { ok: true, message: "Payment settled.", shouldRetry: false };
 }
 
@@ -340,6 +370,57 @@ export async function getPaymentByReference(
   try {
     await requireAdmin();
     return await verifyTransaction(reference);
+  } catch {
+    return null;
+  }
+}
+
+// --------------------------------------------------------------------------
+// Customer-facing: Get order details by payment reference
+// --------------------------------------------------------------------------
+
+export type OrderResultDetails = {
+  orderId: string;
+  orderNumber: string;
+  trackingToken: string;
+};
+
+/**
+ * Look up order details by payment reference.
+ *
+ * Called from the payment result page to display order info
+ * after successful payment. No auth required — the reference
+ * alone is sufficient because the caller already proved they
+ * initiated the payment (they have the reference from the URL,
+ * which was generated server-side during checkout).
+ */
+export async function getOrderDetailsByReference(
+  reference: string,
+): Promise<OrderResultDetails | null> {
+  if (!reference) return null;
+
+  try {
+    const { data: paymentRow, error: paymentErr } = await db
+      .from("payments")
+      .select("order_id")
+      .eq("reference", reference)
+      .maybeSingle();
+
+    if (paymentErr || !paymentRow) return null;
+
+    const { data: orderRow, error: orderErr } = await db
+      .from("orders")
+      .select("id, order_number, tracking_token")
+      .eq("id", paymentRow.order_id)
+      .maybeSingle();
+
+    if (orderErr || !orderRow) return null;
+
+    return {
+      orderId: orderRow.id as string,
+      orderNumber: orderRow.order_number as string,
+      trackingToken: orderRow.tracking_token as string,
+    };
   } catch {
     return null;
   }

@@ -49,7 +49,7 @@ export function SettingsExplorer({ initial }: Props) {
   const [pending, startTransition] = useTransition();
   const [feedback, setFeedback] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [tab, setTab] = useState<"business" | "hours" | "taxes" | "delivery" | "payments" | "branding" | "notifications" | "security" | "api">("business");
+  const [tab, setTab] = useState<"business" | "hours" | "taxes" | "delivery" | "payments" | "branding" | "notifications" | "security">("business");
 
   const flash = (text: string, isError: boolean) => {
     if (isError) {
@@ -100,7 +100,6 @@ export function SettingsExplorer({ initial }: Props) {
       const r = await savePaymentSettingsAction({
         acceptedMethods: ((payments.acceptedMethods as string[]) ?? []).filter(Boolean),
         paystackPublicKey: String(payments.paystackPublicKey ?? ""),
-        paystackSecretKey: String(payments.paystackSecretKey ?? ""),
         defaultCurrency: String(payments.defaultCurrency ?? "NGN"),
       });
       flash(r.ok ? "Saved." : r.error, !r.ok);
@@ -158,9 +157,9 @@ export function SettingsExplorer({ initial }: Props) {
       ) : null}
 
       <div className="flex flex-wrap gap-[var(--ds-space-2)]">
-        {(["business", "hours", "taxes", "delivery", "payments", "branding", "notifications", "security", "api"] as const).map((t) => (
+        {(["business", "hours", "taxes", "delivery", "payments", "branding", "notifications", "security"] as const).map((t) => (
           <Button key={t} variant={tab === t ? "primary" : "ghost"} size="sm" onClick={() => setTab(t)}>
-            {t === "api" ? "API keys" : t.charAt(0).toUpperCase() + t.slice(1)}
+            {t.charAt(0).toUpperCase() + t.slice(1)}
           </Button>
         ))}
       </div>
@@ -303,8 +302,10 @@ export function SettingsExplorer({ initial }: Props) {
             ))}
           </div>
           <Field label="Paystack public key"><TextInput value={String(payments.paystackPublicKey ?? "")} onChange={(e) => (payments.paystackPublicKey = e.target.value)} /></Field>
-          <Field label="Paystack secret key"><TextInput type="password" value={String(payments.paystackSecretKey ?? "")} onChange={(e) => (payments.paystackSecretKey = e.target.value)} /></Field>
-          <div className="md:col-span-2 flex justify-end">
+          <div className="md:col-span-2 text-[length:var(--ds-text-caption)] text-[var(--ds-color-muted)]">
+            The Paystack secret key is configured via the <code>PAYSTACK_SECRET_KEY</code> environment variable on your deployment platform. It is never stored or displayed here.
+          </div>
+          <div className="md:col-span-2 flex justify-end">            
             <Button onClick={submitPayments} variant="primary" disabled={pending}>
               Save payments
             </Button>
@@ -382,70 +383,6 @@ export function SettingsExplorer({ initial }: Props) {
           </div>
         </div>
       ) : null}
-
-      {tab === "api" ? (
-        <ApiKeyForm />
-      ) : null}
-    </div>
-  );
-}
-
-function ApiKeyForm() {
-  const [provider, setProvider] = useState("stripe");
-  const [key, setKey] = useState("");
-  const [pending, startTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
-  const [feedback, setFeedback] = useState<string | null>(null);
-
-  const save = () => {
-    if (!key.trim()) {
-      setError("Enter a key first.");
-      return;
-    }
-    setError(null);
-    setFeedback(null);
-    startTransition(async () => {
-      const { saveApiKeyAction } = await import("lib/actions/settings");
-      const r = await saveApiKeyAction(provider, key);
-      if (!r.ok) {
-        setError(r.error);
-        return;
-      }
-      setFeedback("Saved.");
-      setKey("");
-    });
-  };
-
-  return (
-    <div className="flex flex-col gap-[var(--ds-space-3)]">
-      {error ? (
-        <div className="rounded-[var(--ds-radius-md)] border border-[var(--ds-color-danger)]/30 bg-[var(--ds-color-danger)]/10 p-[var(--ds-space-3)] text-[length:var(--ds-text-caption)] text-[var(--ds-color-fg)]">
-          {error}
-        </div>
-      ) : null}
-      {feedback ? (
-        <div className="rounded-[var(--ds-radius-md)] border border-[var(--ds-color-success)]/30 bg-[var(--ds-color-success)]/10 p-[var(--ds-space-3)] text-[length:var(--ds-text-caption)] text-[var(--ds-color-fg)]">
-          {feedback}
-        </div>
-      ) : null}
-      <div className="grid grid-cols-1 gap-[var(--ds-space-3)] md:grid-cols-[1fr_2fr_auto]">
-        <Select value={provider} onChange={(e) => setProvider(e.target.value)}>
-          <option value="paystack">Paystack</option>
-          <option value="sendgrid">SendGrid</option>
-          <option value="twilio">Twilio</option>
-          <option value="termii">Termii</option>
-          <option value="mapbox">Mapbox</option>
-        </Select>
-        <TextInput
-          type="password"
-          value={key}
-          onChange={(e) => setKey(e.target.value)}
-          placeholder="Paste key…"
-        />
-        <Button onClick={save} variant="primary" disabled={pending}>
-          {pending ? "Saving…" : "Save key"}
-        </Button>
-      </div>
     </div>
   );
 }

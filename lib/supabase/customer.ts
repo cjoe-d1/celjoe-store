@@ -55,7 +55,7 @@ const getSupabaseServerClient = async () => {
   );
 };
 
-const getOrCreateCustomerId = async (
+export const getOrCreateCustomerId = async (
   supabase: Awaited<ReturnType<typeof getSupabaseServerClient>>,
   userId: string,
   email: string,

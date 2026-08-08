@@ -21,6 +21,7 @@ import {
   CURRENCY,
 } from "lib/paystack";
 import { CURRENCY_CODE } from "lib/format-currency";
+import { getCurrentCustomerSession } from "lib/auth/session";
 
 // --------------------------------------------------------------------------
 // Types
@@ -32,10 +33,21 @@ type CheckoutInput = {
   email: string;
   phone: string;
   deliveryMethod: "standard" | "pickup";
+  addressLine1: string;
+  city: string;
+  state: string;
+  deliveryInstructions: string;
 };
 
 type CreateOrderResult =
-  | { ok: true; orderId: string; orderNumber: string; paymentReference: string; authorizationUrl: string }
+  | {
+      ok: true;
+      orderId: string;
+      orderNumber: string;
+      paymentReference: string;
+      authorizationUrl: string;
+      trackingToken: string;
+    }
   | { ok: false; error: string };
 
 // --------------------------------------------------------------------------
@@ -219,6 +231,10 @@ export async function createOrderAction(
       email: String(formData.get("email") ?? "").trim().toLowerCase(),
       phone: String(formData.get("phone") ?? "").trim(),
       deliveryMethod: (formData.get("deliveryMethod") as "standard" | "pickup") || "standard",
+      addressLine1: String(formData.get("addressLine1") ?? "").trim(),
+      city: String(formData.get("city") ?? "").trim(),
+      state: String(formData.get("state") ?? "").trim(),
+      deliveryInstructions: String(formData.get("deliveryInstructions") ?? "").trim(),
     };
 
     if (!input.firstName || !input.lastName) {
@@ -232,6 +248,17 @@ export async function createOrderAction(
     }
     if (!["standard", "pickup"].includes(input.deliveryMethod)) {
       return { ok: false, error: "Invalid delivery method." };
+    }
+    if (input.deliveryMethod === "standard") {
+      if (!input.addressLine1) {
+        return { ok: false, error: "Please provide your delivery address." };
+      }
+      if (!input.city) {
+        return { ok: false, error: "Please provide your city." };
+      }
+      if (!input.state) {
+        return { ok: false, error: "Please provide your state." };
+      }
     }
 
     // ---- 2. Retrieve cart server-side ----
@@ -253,14 +280,67 @@ export async function createOrderAction(
     const customerName = `${input.firstName} ${input.lastName}`;
     const orderNumber = generateOrderNumber();
     const paymentReference = generateReference("CELJOE");
+    const trackingToken = crypto.randomUUID();
 
-    // ---- 5. Create the order ----
+    // ---- 5. Resolve customer_id for authenticated users ----
+    let customerId: string | null = null;
+    try {
+      const session = await getCurrentCustomerSession();
+      if (session) {
+        // Look up existing customer by auth_user_id
+        const { data: existing } = await db
+          .from("customers")
+          .select("id")
+          .eq("auth_user_id", session.userId)
+          .maybeSingle();
+
+        if (existing && existing.id) {
+          customerId = existing.id as string;
+        } else {
+          // Fallback: look up by email and link auth_user_id
+          const { data: fallback } = await db
+            .from("customers")
+            .select("id")
+            .eq("email", session.email)
+            .maybeSingle();
+
+          if (fallback && fallback.id) {
+            await db
+              .from("customers")
+              .update({ auth_user_id: session.userId })
+              .eq("id", fallback.id);
+            customerId = fallback.id as string;
+          } else {
+            // Create a new customer record
+            const { data: inserted } = await db
+              .from("customers")
+              .insert({
+                email: session.email,
+                full_name: session.fullName,
+                auth_user_id: session.userId,
+              })
+              .select("id")
+              .single();
+
+            if (inserted && inserted.id) {
+              customerId = inserted.id as string;
+            }
+          }
+        }
+      }
+    } catch {
+      // Customer session lookup failed — proceed as guest.
+      // This is non-fatal; the order still works without a customer_id.
+    }
+
+    // ---- 6. Create the order ----
     // Admin client (service role) bypasses RLS — the browser never
     // has direct access to the orders table.
     const { data: orderRow, error: orderError } = await db
       .from("orders")
       .insert({
         order_number: orderNumber,
+        customer_id: customerId,
         customer_name: customerName,
         customer_email: input.email,
         customer_phone: input.phone,
@@ -273,6 +353,12 @@ export async function createOrderAction(
         payment_reference: null,
         order_status: "pending",
         delivery_method: input.deliveryMethod,
+        address_line1: input.deliveryMethod === "standard" ? input.addressLine1 : null,
+        city: input.deliveryMethod === "standard" ? input.city : null,
+        state: input.deliveryMethod === "standard" ? input.state : null,
+        delivery_instructions: input.deliveryInstructions || null,
+        tracking_token: trackingToken,
+        cart_id: cart.cartId,
         notes: null,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -287,7 +373,7 @@ export async function createOrderAction(
 
     const orderId = orderRow.id;
 
-    // ---- 6. Create order_items ----
+    // ---- 7. Create order_items ----
     const orderItems = lineItems.map((li) => ({
       order_id: orderId,
       product_id: li.productId,
@@ -316,7 +402,7 @@ export async function createOrderAction(
       return { ok: false, error: "Could not create your order. Please try again." };
     }
 
-    // ---- 7. Initialize Paystack (external service — after order is safe) ----
+    // ---- 8. Initialize Paystack (external service — after order is safe) ----
     let paystackData: { authorization_url: string; access_code: string; reference: string };
     try {
       paystackData = await initializeTransaction({
@@ -337,7 +423,7 @@ export async function createOrderAction(
       return { ok: false, error: "Payment service is temporarily unavailable. Your order has been saved — please try paying from your account or contact support." };
     }
 
-    // ---- 8. Create payment attempt record ----
+    // ---- 9. Create payment attempt record ----
     const { error: paymentError } = await db.from("payments").insert({
       reference: paymentReference,
       order_id: orderId,
@@ -358,13 +444,14 @@ export async function createOrderAction(
       // The webhook can still recover this. Continue with the redirect.
     }
 
-    // ---- 9. Return authorization URL to client ----
+    // ---- 10. Return authorization URL + tracking token to client ----
     return {
       ok: true,
       orderId,
       orderNumber,
       paymentReference,
       authorizationUrl: paystackData.authorization_url,
+      trackingToken,
     };
   } catch (err) {
     const message =

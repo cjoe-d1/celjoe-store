@@ -1,4 +1,4 @@
-import { supabase } from "lib/supabase/client";
+import { db } from "lib/supabase/admin";
 import { getCategories, type Category } from "lib/supabase/categories";
 import { getProducts, type Product } from "lib/supabase/products";
 
@@ -78,7 +78,7 @@ export async function listAdminCategories(): Promise<Category[]> {
 
 export async function listIngredients(): Promise<Ingredient[]> {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from("ingredients")
       .select("*")
       .order("name", { ascending: true });
@@ -103,7 +103,7 @@ export async function listIngredients(): Promise<Ingredient[]> {
 
 export async function listSuppliers(): Promise<Supplier[]> {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from("suppliers")
       .select("*")
       .order("name", { ascending: true });

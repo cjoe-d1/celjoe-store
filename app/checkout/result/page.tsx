@@ -15,11 +15,11 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "components/chds";
 import { SuccessSummary } from "components/chds/checkout";
-import { verifyPaymentAction } from "lib/actions/payments";
+import { verifyPaymentAction, getOrderDetailsByReference, type OrderResultDetails } from "lib/actions/payments";
 
 type ResultState =
   | { phase: "verifying" }
-  | { phase: "success" }
+  | { phase: "success"; order: OrderResultDetails }
   | { phase: "failed"; message: string }
   | { phase: "pending"; message: string }
   | { phase: "error"; message: string };
@@ -56,11 +56,19 @@ function ResultContent() {
 
         switch (result.status) {
           case "success":
-            setState({ phase: "success" });
+          case "already_processed": {
+            // Fetch order details for the tracking link
+            const details = await getOrderDetailsByReference(reference);
+            setState({
+              phase: "success",
+              order: details ?? {
+                orderId: "",
+                orderNumber: "",
+                trackingToken: "",
+              },
+            });
             break;
-          case "already_processed":
-            setState({ phase: "success" });
-            break;
+          }
           case "pending":
             setState({
               phase: "pending",
@@ -107,6 +115,29 @@ function ResultContent() {
           title="Payment successful!"
           description="Your order has been confirmed. We&apos;ll send you updates about your order status."
         >
+          {state.order.orderNumber ? (
+            <div className="mb-[var(--ds-space-4)] p-[var(--ds-space-3)] rounded-[var(--ds-radius-sm)] bg-[var(--ds-color-surface)] border border-[var(--ds-color-border)] text-left">
+              <div className="text-[length:var(--ds-text-caption)] text-[var(--ds-color-muted)]">
+                Order number
+              </div>
+              <div className="text-[length:var(--ds-text-body)] font-[var(--ds-font-weight-medium)] text-[var(--ds-color-fg)]">
+                {state.order.orderNumber}
+              </div>
+              {state.order.trackingToken ? (
+                <>
+                  <div className="mt-[var(--ds-space-2)] text-[length:var(--ds-text-caption)] text-[var(--ds-color-muted)]">
+                    Track your order
+                  </div>
+                  <Link
+                    href={`/track/${state.order.trackingToken}`}
+                    className="text-[length:var(--ds-text-small)] text-[var(--ds-color-accent)] underline break-all"
+                  >
+                    /track/{state.order.trackingToken.slice(0, 8)}…
+                  </Link>
+                </>
+              ) : null}
+            </div>
+          ) : null}
           <div className="flex flex-wrap gap-[var(--ds-space-3)]">
             <Link href="/account/orders">
               <Button variant="primary">View your orders</Button>

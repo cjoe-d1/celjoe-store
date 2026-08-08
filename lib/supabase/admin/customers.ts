@@ -1,4 +1,4 @@
-import { supabase } from "lib/supabase/client";
+import { db } from "lib/supabase/admin";
 
 export type AdminCustomer = {
   id: string;
@@ -26,7 +26,7 @@ export async function listAdminCustomers(
   params: { search?: string } = {},
 ): Promise<{ customers: AdminCustomer[] }> {
   try {
-    let query = supabase
+    let query = db
       .from("customers")
       .select("*")
       .order("created_at", { ascending: false })
@@ -78,7 +78,7 @@ export async function listAdminCustomers(
 
 export async function getAdminCustomerById(id: string): Promise<AdminCustomer | null> {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from("customers")
       .select("*")
       .eq("id", id)

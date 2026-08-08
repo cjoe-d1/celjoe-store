@@ -150,18 +150,26 @@ export async function saveDeliverySettingsAction(input: {
 export async function savePaymentSettingsAction(input: {
   acceptedMethods: string[];
   paystackPublicKey: string;
-  paystackSecretKey: string;
   defaultCurrency: string;
 }): Promise<ActionResult> {
   try {
     const session = await requireAdmin();
     const { ip, userAgent } = await getClientMetadata();
 
+    // SECURITY: Never store secret keys in the settings table.
+    // Secret keys (PAYSTACK_SECRET_KEY, Supabase service role, VAPID private key, etc.)
+    // MUST remain server-side environment variables only.
+    const value = {
+      acceptedMethods: input.acceptedMethods,
+      paystackPublicKey: input.paystackPublicKey,
+      defaultCurrency: input.defaultCurrency,
+    };
+
     const { error } = await db.from("settings")
       .upsert(
         {
           key: "payments",
-          value: input,
+          value,
           updated_at: new Date().toISOString(),
           updated_by: session.userId,
         },
@@ -291,34 +299,29 @@ export async function saveSecuritySettingsAction(input: {
   }
 }
 
+/**
+ * SECURITY: API keys MUST NOT be stored in the settings table.
+ *
+ * Secret keys (PAYSTACK_SECRET_KEY, SendGrid, Twilio, etc.) are
+ * configured via environment variables on the deployment platform.
+ * Storing them in the database exposes them to any admin client
+ * that reads the settings table via the anon key.
+ *
+ * This action now returns an error explaining the correct approach.
+ */
 export async function saveApiKeyAction(
   provider: string,
   key: string,
 ): Promise<ActionResult> {
-  try {
-    const session = await requireAdmin();
-    const { ip, userAgent } = await getClientMetadata();
+  const session = await requireAdmin();
+  const { ip, userAgent } = await getClientMetadata();
 
-    const { error } = await db.from("settings")
-      .upsert(
-        {
-          key: `api_key:${provider}`,
-          value: { provider, key, updated_by: session.userId },
-          updated_at: new Date().toISOString(),
-          updated_by: session.userId,
-        },
-        { onConflict: "key" },
-      );
+  await logAudit(
+    auditFromSession(session, "settings.api_key_rejected", "settings", provider, null, ip, userAgent),
+  );
 
-    if (error) return { ok: false, error: error.message };
-
-    await logAudit(
-      auditFromSession(session, "settings.update_api_key", "settings", provider, null, ip, userAgent),
-    );
-
-    revalidatePath("/admin/settings");
-    return { ok: true };
-  } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Failed to save API key." };
-  }
+  return {
+    ok: false,
+    error: `API keys are configured via environment variables, not through the admin panel. Set the ${provider.toUpperCase()} key on your deployment platform.`,
+  };
 }

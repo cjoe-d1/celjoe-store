@@ -31,6 +31,10 @@ export default function CheckoutPage() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod>("standard");
+  const [addressLine1, setAddressLine1] = useState("");
+  const [city, setCity] = useState("");
+  const [state, setState] = useState("");
+  const [deliveryInstructions, setDeliveryInstructions] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -61,6 +65,12 @@ export default function CheckoutPage() {
         setError("Please fill in all contact fields.");
         return;
       }
+      if (deliveryMethod === "standard") {
+        if (!addressLine1 || !city || !state) {
+          setError("Please fill in your delivery address.");
+          return;
+        }
+      }
 
       setSubmitting(true);
 
@@ -71,6 +81,10 @@ export default function CheckoutPage() {
         fd.set("email", email);
         fd.set("phone", phone);
         fd.set("deliveryMethod", deliveryMethod);
+        fd.set("addressLine1", addressLine1);
+        fd.set("city", city);
+        fd.set("state", state);
+        fd.set("deliveryInstructions", deliveryInstructions);
 
         const result = await createOrderAction(fd);
 
@@ -87,7 +101,7 @@ export default function CheckoutPage() {
         setSubmitting(false);
       }
     },
-    [firstName, lastName, email, phone, deliveryMethod, items.length],
+    [firstName, lastName, email, phone, deliveryMethod, addressLine1, city, state, items.length],
   );
 
   // Empty cart state
@@ -216,6 +230,46 @@ export default function CheckoutPage() {
               </label>
             </div>
           </CheckoutStepCard>
+
+          {/* Address — only for standard delivery */}
+          {deliveryMethod === "standard" ? (
+            <CheckoutStepCard title="2b. Delivery Address">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-[var(--ds-space-3)]">
+                <Field label="Address line 1" className="sm:col-span-2">
+                  <TextInput
+                    name="addressLine1"
+                    value={addressLine1}
+                    onChange={(ev) => setAddressLine1(ev.target.value)}
+                    placeholder="House number, street name"
+                  />
+                </Field>
+                <Field label="City">
+                  <TextInput
+                    name="city"
+                    value={city}
+                    onChange={(ev) => setCity(ev.target.value)}
+                    placeholder="Eg. Ikeja"
+                  />
+                </Field>
+                <Field label="State">
+                  <TextInput
+                    name="state"
+                    value={state}
+                    onChange={(ev) => setState(ev.target.value)}
+                    placeholder="Eg. Lagos"
+                  />
+                </Field>
+                <Field label="Landmark / Delivery instructions" className="sm:col-span-2">
+                  <TextInput
+                    name="deliveryInstructions"
+                    value={deliveryInstructions}
+                    onChange={(ev) => setDeliveryInstructions(ev.target.value)}
+                    placeholder="Eg. Beside the yellow gate, near the mosque"
+                  />
+                </Field>
+              </div>
+            </CheckoutStepCard>
+          ) : null}
 
           {/* Payment */}
           <CheckoutStepCard title="3. Payment">

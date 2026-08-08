@@ -1,4 +1,4 @@
-import { supabase } from "lib/supabase/client";
+import { db } from "lib/supabase/admin";
 import {
   fetchOrderItems,
   mapOrderItemRow,
@@ -47,7 +47,7 @@ export async function listAdminOrders(
   const toRow = fromRow + pageSize - 1;
 
   try {
-    let query = supabase
+    let query = db
       .from("orders")
       .select("*", { count: "exact" })
       .order("created_at", { ascending: false })
@@ -91,7 +91,7 @@ export async function listAdminOrders(
 
 export async function getAdminOrderById(id: string): Promise<AdminOrder | null> {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from("orders")
       .select("*")
       .eq("id", id)
@@ -126,7 +126,7 @@ export async function updateOrderStatus(
   nextStatus: OrderStatus,
 ): Promise<{ ok: boolean; error?: string }> {
   try {
-    const { error } = await supabase
+    const { error } = await db
       .from("orders")
       .update({
         order_status: nextStatus,
