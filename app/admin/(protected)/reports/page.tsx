@@ -25,15 +25,33 @@ export default async function AdminReportsPage(props: {
 
   const sp = await props.searchParams;
   const now = new Date();
-  const defaultFrom = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+
+  // Default range: last 30 days, date-only strings for the inputs
+  const defaultFrom = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30)
     .toISOString()
     .slice(0, 10);
   const defaultTo = now.toISOString().slice(0, 10);
-  const from = sp.from || defaultFrom;
-  const to = sp.to || defaultTo;
+  const initialFrom = sp.from || defaultFrom;
+  const initialTo = sp.to || defaultTo;
+
+  // Full-range ISO timestamps for the initial server-side data fetch
+  const fromISO = new Date(
+    new Date(initialFrom).getFullYear(),
+    new Date(initialFrom).getMonth(),
+    new Date(initialFrom).getDate(),
+  ).toISOString();
+  const toISO = new Date(
+    new Date(initialTo).getFullYear(),
+    new Date(initialTo).getMonth(),
+    new Date(initialTo).getDate(),
+    23,
+    59,
+    59,
+    999,
+  ).toISOString();
 
   const [ordersPage, productsList] = await Promise.all([
-    listAdminOrders({ pageSize: 200 }),
+    listAdminOrders({ pageSize: 200, dateFrom: fromISO, dateTo: toISO }),
     listAdminProducts(),
   ]);
 
@@ -48,9 +66,9 @@ export default async function AdminReportsPage(props: {
           <Label tone="muted">Reports</Label>
           <div className="mt-[var(--ds-space-4)]">
             <ReportsExplorer
-              from={from}
-              to={to}
-              orders={ordersPage.orders}
+              initialFrom={initialFrom}
+              initialTo={initialTo}
+              initialOrders={ordersPage.orders}
               products={productsList.products}
             />
           </div>
