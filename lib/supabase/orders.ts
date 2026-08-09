@@ -57,6 +57,7 @@ export type OrderLine = {
 export type Order = {
   id: string;
   orderNumber: string;
+  trackingToken: string;
   orderStatus: OrderStatus;
   customerName: string;
   customerEmail: string | null;
@@ -150,6 +151,8 @@ type OrderRow = {
   id: string;
   order_number?: string;
   orderNumber?: string;
+  tracking_token?: string;
+  trackingToken?: string;
   order_status?: string;
   status?: string;
   customer_name?: string;
@@ -198,6 +201,7 @@ export function mapOrderRow(d: OrderRow, items: OrderLine[] = []): Order {
   return {
     id: d.id,
     orderNumber: d.order_number ?? d.orderNumber ?? "",
+    trackingToken: d.tracking_token ?? d.trackingToken ?? "",
     orderStatus: (isOrderStatus(rawStatus) ? rawStatus : "pending") as OrderStatus,
     customerName: d.customer_name ?? d.customerName ?? "Guest",
     customerEmail: d.customer_email ?? d.customerEmail ?? null,
@@ -286,9 +290,12 @@ export async function getRecentOrdersForCustomer(
   }
 }
 
-export async function fetchOrderItems(orderId: string): Promise<OrderLine[]> {
+export async function fetchOrderItems(
+  orderId: string,
+  client = supabase,
+): Promise<OrderLine[]> {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await client
       .from("order_items")
       .select("*")
       .eq("order_id", orderId)

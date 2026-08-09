@@ -5,6 +5,7 @@ import { db } from "lib/supabase/admin";
 import { requireAdmin } from "lib/auth/guards";
 import { getClientMetadata } from "lib/auth/session";
 import { logAudit, auditFromSession } from "lib/auth/audit";
+import { sendPushToAllAdmins } from "lib/push/send";
 
 type ActionResult = { ok: true } | { ok: false; error: string };
 
@@ -324,4 +325,40 @@ export async function saveApiKeyAction(
     ok: false,
     error: `API keys are configured via environment variables, not through the admin panel. Set the ${provider.toUpperCase()} key on your deployment platform.`,
   };
+}
+
+// --------------------------------------------------------------------------
+// Admin push notification test
+// --------------------------------------------------------------------------
+
+/**
+ * Send a test push notification to all admin devices.
+ *
+ * This is an admin-only diagnostic action. It verifies the
+ * complete push pipeline: VAPID config → subscription retrieval →
+ * web-push dispatch → push service → service worker → notification.
+ */
+export async function sendTestPushAction(): Promise<ActionResult> {
+  try {
+    const session = await requireAdmin();
+    const { ip, userAgent } = await getClientMetadata();
+
+    await sendPushToAllAdmins({
+      title: "CELJOE Grills & Juicebar",
+      body: "Test notification — push is working correctly.",
+      url: "/admin",
+      tag: "test",
+    });
+
+    await logAudit(
+      auditFromSession(session, "admin.push_test", "push_subscriptions", null, null, ip, userAgent),
+    );
+
+    return { ok: true };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Push test failed.",
+    };
+  }
 }

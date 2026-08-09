@@ -7,7 +7,7 @@ import { customerForgotPasswordAction } from "lib/auth/actions";
 
 export const metadata: Metadata = buildMetadata({
   title: "Forgot password",
-  description: "Reset your Celjoe account password.",
+  description: "Reset your CELJOE Grills & Juicebar account password.",
   path: "/account/forgot-password",
 });
 

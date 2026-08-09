@@ -12,6 +12,7 @@ import {
   saveBrandingAction,
   saveNotificationsAction,
   saveSecuritySettingsAction,
+  sendTestPushAction,
 } from "lib/actions/settings";
 
 type Initial = {
@@ -141,6 +142,12 @@ export function SettingsExplorer({ initial }: Props) {
         ipAllowlist: String(security.ipAllowlist ?? ""),
       });
       flash(r.ok ? "Saved." : r.error, !r.ok);
+    });
+
+  const testPush = () =>
+    startTransition(async () => {
+      const r = await sendTestPushAction();
+      flash(r.ok ? "Test notification sent. Check your device." : r.error, !r.ok);
     });
 
   return (
@@ -305,7 +312,13 @@ export function SettingsExplorer({ initial }: Props) {
           <div className="md:col-span-2 text-[length:var(--ds-text-caption)] text-[var(--ds-color-muted)]">
             The Paystack secret key is configured via the <code>PAYSTACK_SECRET_KEY</code> environment variable on your deployment platform. It is never stored or displayed here.
           </div>
-          <div className="md:col-span-2 flex justify-end">            
+          <div className="md:col-span-2 text-[length:var(--ds-text-caption)] text-[var(--ds-color-muted)]">
+            Test that push notifications work on admin devices. Must have an active push subscription in the current browser/PWA.
+          </div>
+          <div className="md:col-span-2 flex justify-between gap-[var(--ds-space-4)]">
+            <Button onClick={testPush} variant="outline" disabled={pending}>
+              {pending ? "Sending…" : "Send Test Notification"}
+            </Button>
             <Button onClick={submitPayments} variant="primary" disabled={pending}>
               Save payments
             </Button>

@@ -1,7 +1,6 @@
 import { db } from "lib/supabase/admin";
 import {
   fetchOrderItems,
-  mapOrderItemRow,
   mapOrderRow,
   type Order,
   type OrderStatus,
@@ -70,12 +69,31 @@ export async function listAdminOrders(
       throw error;
     }
 
-    const orders: AdminOrder[] = (data ?? []).map((d: unknown) => {
-      const order = mapOrderRow(d as Parameters<typeof mapOrderRow>[0]);
+    const rawOrders = (data ?? []) as Array<Parameters<typeof mapOrderRow>[0]>;
+    const orders: AdminOrder[] = rawOrders.map((d) => {
+      const order = mapOrderRow(d);
       const adminOrder = order as AdminOrder;
       adminOrder.itemsCount = 0;
       return adminOrder;
     });
+
+    // Batch-fetch item counts for all orders on this page
+    if (orders.length > 0) {
+      const orderIds = orders.map((o) => o.id);
+      const { data: countsData, error: countsError } = await db
+        .from("order_items")
+        .select("order_id")
+        .in("order_id", orderIds);
+      if (!countsError && countsData) {
+        const countByOrder = new Map<string, number>();
+        for (const row of countsData as Array<{ order_id: string }>) {
+          countByOrder.set(row.order_id, (countByOrder.get(row.order_id) ?? 0) + 1);
+        }
+        for (const o of orders) {
+          o.itemsCount = countByOrder.get(o.id) ?? 0;
+        }
+      }
+    }
 
     return {
       orders,
@@ -104,7 +122,7 @@ export async function getAdminOrderById(id: string): Promise<AdminOrder | null> 
     if (!data) return null;
 
     const order = mapOrderRow(data as Parameters<typeof mapOrderRow>[0]);
-    const items = await fetchOrderItems(order.id);
+    const items = await fetchOrderItems(order.id, db);
     const adminOrder: AdminOrder = {
       ...order,
       items,
@@ -116,9 +134,8 @@ export async function getAdminOrderById(id: string): Promise<AdminOrder | null> 
   }
 }
 
-export async function getAdminOrderItems(orderId: string) {
-  const items = await fetchOrderItems(orderId);
-  return items.map((it) => mapOrderItemRow(it as unknown as Parameters<typeof mapOrderItemRow>[0]));
+export async function getAdminOrderItems(orderId: string): Promise<Order["items"]> {
+  return fetchOrderItems(orderId, db);
 }
 
 export async function updateOrderStatus(

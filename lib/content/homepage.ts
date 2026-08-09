@@ -36,7 +36,7 @@ export const homepageContent = {
   },
 
   standards: {
-    title: "The Celjoe Standard",
+    title: "The CELJOE Grills & Juicebar Standard",
     items: [
       { title: "Hospitality First", description: "Every dish is prepared with intention and care." },
       { title: "Editorial Presentation", description: "Food deserves to be seen, not just eaten." },
@@ -51,6 +51,6 @@ export const homepageContent = {
   finalInvitation: {
     headline: "Join us at the table",
     image: images.home.ctaBg,
-    primaryCta: { label: "Reserve a Table", href: "/checkout" },
+    primaryCta: { label: "Reserve a Table", href: "/catering" },
   },
 } as const;

@@ -7,6 +7,7 @@ import type { OrderStatus } from "lib/supabase/orders";
 export type CustomerOrderSummary = {
   id: string;
   orderNumber: string;
+  trackingToken: string;
   status: OrderStatus;
   total: number;
   createdAt: string;
@@ -112,7 +113,7 @@ export async function listCustomerOrders(): Promise<CustomerOrderSummary[]> {
 
   const { data: orders, error } = await supabase
     .from("orders")
-    .select("id, order_number, status, total, created_at, order_items(id)")
+    .select("id, order_number, tracking_token, order_status, total, created_at, order_items(id)")
     .eq("customer_id", customerId)
     .order("created_at", { ascending: false })
     .limit(50);
@@ -120,7 +121,8 @@ export async function listCustomerOrders(): Promise<CustomerOrderSummary[]> {
   return (orders ?? []).map((o) => ({
     id: o.id as string,
     orderNumber: (o.order_number as string) ?? (o.id as string).slice(0, 8),
-    status: (o.status as OrderStatus) ?? "pending",
+    trackingToken: (o.tracking_token as string) ?? "",
+    status: (o.order_status as OrderStatus) ?? "pending",
     total: Number(o.total ?? 0),
     createdAt: o.created_at as string,
     itemCount: Array.isArray(o.order_items) ? o.order_items.length : 0,

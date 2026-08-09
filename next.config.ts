@@ -1,3 +1,10 @@
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || "";
+const supabaseHostname = supabaseUrl ? (() => { try { return new URL(supabaseUrl).hostname; } catch { return ""; } })() : "";
+
+const remotePatterns: Array<{ protocol: "https"; hostname: string; pathname: string }> = supabaseHostname
+  ? [{ protocol: "https", hostname: supabaseHostname, pathname: "/**" }]
+  : [];
+
 export default {
   turbopack: {
     root: __dirname,
@@ -15,19 +22,7 @@ export default {
   images: {
     formats: ["image/avif", "image/webp"],
     minimumCacheTTL: 86400, // 24 hours
-    remotePatterns: [
-      ...(process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
-        ? [
-            {
-              protocol: "https",
-              hostname: new URL(
-                process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL!,
-              ).hostname,
-              pathname: "/**",
-            },
-          ]
-        : []),
-    ],
+    remotePatterns,
   },
   /** Enable compression for better LCP. */
   compress: true,

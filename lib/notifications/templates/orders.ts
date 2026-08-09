@@ -55,7 +55,7 @@ export function buildCustomerOrderConfirmation(order: {
     `Items: ${order.items_count}`,
     `Total: \u20A6${amount}`,
     "",
-    "Thank you for choosing Celjoe!",
+    "Thank you for choosing CELJOE Grills & Juicebar!",
   ];
 
   return lines.join(NL);

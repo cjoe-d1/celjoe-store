@@ -234,6 +234,9 @@ export default async function TrackTokenPage({ params }: PageProps) {
             ) : null}
 
             <div className="mt-[var(--ds-space-6)] flex flex-col gap-[var(--ds-space-2)]">
+              <Button asChild variant="primary">
+                <Link href={`/receipt/${token}`}>View receipt</Link>
+              </Button>
               <Button asChild>
                 <Link href="/">Back to the kitchen</Link>
               </Button>

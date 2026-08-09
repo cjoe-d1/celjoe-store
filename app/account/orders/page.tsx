@@ -11,7 +11,7 @@ import { formatMoney } from "lib/supabase/orders";
 
 export const metadata: Metadata = {
   title: "Orders",
-  description: "Your Celjoe order history.",
+  description: "Your CELJOE Grills & Juicebar order history.",
 };
 
 export const dynamic = "force-dynamic";
@@ -65,7 +65,10 @@ export default async function OrdersPage() {
                 <div className="flex items-center gap-[var(--ds-space-3)]">
                   <Badge tone="neutral">{statusLabel(o.status)}</Badge>
                   <Button variant="ghost" asChild>
-                    <Link href={`/track-order/${o.orderNumber}`}>Track</Link>
+                    <Link href={`/track/${o.trackingToken}`}>Track</Link>
+                  </Button>
+                  <Button variant="ghost" asChild>
+                    <Link href={`/account/orders/${o.orderNumber}`}>View</Link>
                   </Button>
                 </div>
               </div>

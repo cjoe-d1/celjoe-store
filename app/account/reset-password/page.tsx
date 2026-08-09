@@ -5,7 +5,7 @@ import { ResetPasswordForm } from "./form";
 
 export const metadata: Metadata = buildMetadata({
   title: "Reset your password",
-  description: "Set a new password for your Celjoe account.",
+  description: "Set a new password for your CELJOE Grills & Juicebar account.",
   path: "/account/reset-password",
 });
 

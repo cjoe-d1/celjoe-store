@@ -34,6 +34,11 @@ export {
 /**
  * Sanitise and normalise a phone number for WhatsApp deep-linking.
  *
+ * Handles Nigerian number formats:
+ *   "08012345678"    → "+2348012345678"
+ *   "+2348012345678" → "+2348012345678"
+ *   "2348012345678"  → "+2348012345678"
+ *
  * WhatsApp wa.me URLs accept numbers in E.164 format (with or without +).
  * We enforce the `+` prefix for maximum mobile deep-link compatibility
  * across Android, iPhone, and WhatsApp Web.
@@ -42,6 +47,15 @@ function normalisePhone(phone: string): string {
   let cleaned = phone.replace(/[^\d+]/g, "");
   // Strip any existing + so we can re-add it consistently
   cleaned = cleaned.replace(/^\+/, "");
+
+  // Nigerian number normalization: if the number starts with 0 after stripping +,
+  // it's a local Nigerian format — prepend 234
+  if (cleaned.startsWith("0") && cleaned.length === 11) {
+    cleaned = `234${cleaned.slice(1)}`;
+  }
+
+  // If the number starts with country code 234 but without +, it's already valid
+  // Just re-add the + prefix
   return `+${cleaned}`;
 }
 
@@ -83,7 +97,7 @@ export function buildCustomerQuotationWaText(quote: {
   quote_number: string;
 }): string {
   const lines: string[] = [
-    `Hello CELJOE, I just submitted a quotation request.`,
+    `Hello CELJOE Grills & Juicebar, I just submitted a quotation request.`,
     ``,
     `Name: ${quote.customer_name}`,
     `Phone: ${quote.customer_phone}`,

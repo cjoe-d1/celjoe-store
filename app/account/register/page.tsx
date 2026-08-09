@@ -7,7 +7,7 @@ import { customerRegisterAction } from "lib/auth/actions";
 
 export const metadata: Metadata = buildMetadata({
   title: "Create an account",
-  description: "Create your Celjoe account.",
+  description: "Create your CELJOE Grills & Juicebar account.",
   path: "/account/register",
 });
 

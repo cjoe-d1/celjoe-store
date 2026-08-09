@@ -282,7 +282,7 @@ export default function CheckoutPage() {
 
               <p className="text-[length:var(--ds-text-small)] text-[var(--ds-color-muted)]">
                 You&apos;ll be redirected to Paystack to complete your payment
-                securely. CELJOE never stores your card details.
+                securely. CELJOE Grills & Juicebar never stores your card details.
               </p>
 
               <Button

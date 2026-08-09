@@ -2,10 +2,10 @@
  * Site configuration. Single source of truth for the storefront brand.
  */
 export const siteConfig = {
-  name: process.env.SITE_NAME || "Celjoe Store",
-  company: process.env.COMPANY_NAME || "Celjoe",
+  name: process.env.SITE_NAME || "CELJOE Grills & Juicebar",
+  company: process.env.COMPANY_NAME || "CELJOE Grills & Juicebar",
   description:
-    "Celjoe is Lagos' destination for elevated dining, handcrafted cold-pressed juices, gourmet catering, signature smokehouse cuisine, wholesome Nigerian meals, and luxury hospitality experiences — crafted fresh and delivered with excellence.",
+    "CELJOE Grills & Juicebar is Lagos' destination for elevated dining, handcrafted cold-pressed juices, gourmet catering, signature smokehouse cuisine, wholesome Nigerian meals, and luxury hospitality experiences — crafted fresh and delivered with excellence.",
   tagline: "Hospitality before technology.",
   url:
     process.env.NEXT_PUBLIC_SITE_URL ||

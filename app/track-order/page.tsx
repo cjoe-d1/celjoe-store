@@ -67,8 +67,8 @@ export default async function TrackOrderPage({
             </ol>
             <p className="mt-[var(--ds-space-5)] text-[length:var(--ds-text-caption)] text-[var(--ds-color-muted)]">
               Need help? Reach us at{" "}
-              <a className="underline" href="mailto:hello@celjoe.store">
-                hello@celjoe.store
+              <a className="underline" href="mailto:enwamara18@gmail.com">
+                enwamara18@gmail.com
               </a>
               .
             </p>

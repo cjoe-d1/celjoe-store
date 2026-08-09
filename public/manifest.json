@@ -1,7 +1,7 @@
 {
-  "name": "CELJOE Store Admin",
-  "short_name": "CELJOE Admin",
-  "description": "Order and quotation management for CELJOE Store",
+  "name": "CELJOE Grills & Juicebar",
+  "short_name": "CELJOE",
+  "description": "CELJOE Grills & Juicebar — From our kitchen to your table.",
   "start_url": "/admin",
   "display": "standalone",
   "background_color": "#0a0a0a",

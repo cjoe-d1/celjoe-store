@@ -9,7 +9,7 @@ import { getCurrentCustomerSession } from "lib/auth/session";
 
 export const metadata: Metadata = buildMetadata({
   title: "Sign in",
-  description: "Sign in to your Celjoe account.",
+  description: "Sign in to your CELJOE Grills & Juicebar account.",
   path: "/account/login",
 });
 

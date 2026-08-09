@@ -23,45 +23,14 @@ export default function NotificationsPage() {
       title="Notifications"
       description="Choose what we tell you about. We'll keep them quiet by default."
     >
-      <form
-        className="rounded-[var(--ds-radius-xl)] border border-[var(--ds-color-border)] bg-[var(--ds-color-surface)] p-[var(--ds-space-8)]"
-        action="/api/account/notifications"
-        method="post"
-      >
-        <FormSection title="Email">
-          <ul className="flex flex-col gap-[var(--ds-space-3)]">
-            {NOTIFICATION_OPTIONS.map((opt) => (
-              <li
-                key={opt.id}
-                className="flex items-start gap-[var(--ds-space-3)] rounded-[var(--ds-radius-md)] border border-[var(--ds-color-border)] p-[var(--ds-space-4)]"
-              >
-                <Checkbox
-                  id={opt.id}
-                  name={opt.id}
-                  defaultChecked={opt.defaultChecked}
-                  className="mt-1"
-                />
-                <Field>
-                  <label htmlFor={opt.id} className="text-[length:var(--ds-text-body)] font-[var(--ds-font-weight-medium)] text-[var(--ds-color-fg)]">
-                    {opt.label}
-                  </label>
-                  <p className="text-[length:var(--ds-text-caption)] text-[var(--ds-color-muted)]">
-                    {opt.description}
-                  </p>
-                </Field>
-              </li>
-            ))}
-          </ul>
-        </FormSection>
-        <div className="mt-[var(--ds-space-5)] flex justify-end">
-          <button
-            type="submit"
-            className="inline-flex h-[var(--ds-size-control)] items-center justify-center rounded-full bg-[var(--ds-color-accent)] px-[var(--ds-space-6)] text-[length:var(--ds-text-body)] font-[var(--ds-font-weight-medium)] text-white transition-opacity hover:opacity-90 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[var(--ds-color-focus-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--ds-color-bg)]"
-          >
-            Save preferences
-          </button>
-        </div>
-      </form>
+      <div className="rounded-[var(--ds-radius-xl)] border border-dashed border-[var(--ds-color-border)] bg-[var(--ds-color-surface)] p-[var(--ds-space-12)] text-center">
+        <h3 className="text-[length:var(--ds-text-h4)] font-[var(--ds-font-weight-medium)] text-[var(--ds-color-fg)]">
+          Coming soon
+        </h3>
+        <p className="mt-[var(--ds-space-2)] text-[length:var(--ds-text-body)] text-[var(--ds-color-muted)]">
+          Notification preferences will be available soon. For now, we&apos;ll keep you updated on your orders.
+        </p>
+      </div>
     </AccountShell>
   );
 }

@@ -12,7 +12,7 @@ import { statusLabel } from "lib/supabase/orders";
 export const metadata: Metadata = {
   title: "Account",
   description:
-    "Your Celjoe account — orders, addresses, saved meals, notifications, and preferences.",
+    "Your CELJOE Grills & Juicebar account — orders, addresses, saved meals, notifications, and preferences.",
 };
 
 export const dynamic = "force-dynamic";
