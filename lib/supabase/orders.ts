@@ -244,13 +244,44 @@ const isMissingTable = (code: string | undefined): boolean =>
   code === "PGRST205" || code === "42P01" || code === "PGRST116";
 
 /**
+ * Look up an order by its cryptographically secure tracking token.
+ * Returns only the tracking token on success — caller should redirect
+ * to `/track/[token]` for the full order view.
+ *
+ * Uses the anon-key client (public, subject to RLS). Requires the
+ * `fix_anon_rls_orders.sql` migration to be applied so the anon role
+ * can read the `tracking_token` column.
+ */
+export async function getTrackingToken(
+  token: string,
+  client = supabase,
+): Promise<string | null> {
+  if (!token || token.length < 8) return null;
+  try {
+    const { data, error } = await client
+      .from("orders")
+      .select("tracking_token")
+      .eq("tracking_token", token)
+      .maybeSingle();
+    if (error || !data) return null;
+    const row = data as Record<string, unknown>;
+    return String(row.tracking_token ?? "");
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Look up an order by its public-facing order number.
  * Reads from the production `orders` and `order_items` tables.
  */
-export async function getOrderByNumber(orderNumber: string): Promise<Order | null> {
+export async function getOrderByNumber(
+  orderNumber: string,
+  client = supabase,
+): Promise<Order | null> {
   if (!orderNumber) return null;
   try {
-    const { data, error } = await supabase
+    const { data, error } = await client
       .from("orders")
       .select("*")
       .eq("order_number", orderNumber)
@@ -261,7 +292,7 @@ export async function getOrderByNumber(orderNumber: string): Promise<Order | nul
     }
     if (!data) return null;
     const order = mapOrderRow(data as OrderRow);
-    order.items = await fetchOrderItems(order.id);
+    order.items = await fetchOrderItems(order.id, client);
     return order;
   } catch {
     return null;

@@ -1,11 +1,14 @@
 "use server";
 
-import { createServerClient, type CookieOptions } from "@supabase/ssr";
-import { cookies, headers } from "next/headers";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { requireEnv } from "config/env";
-import { clearCookieSession, writeCookieSession } from "lib/auth/session";
-import { checkRateLimit, getRateLimitKey } from "lib/security/rate-limit";
+import {
+  clearCookieSession,
+  writeCookieSession,
+  getSupabaseServerClient,
+} from "lib/auth/session";
+import { checkRateLimit } from "lib/security/rate-limit";
+import { db } from "lib/supabase/admin";
 
 /**
  * Authentication actions — Phase A
@@ -16,35 +19,6 @@ import { checkRateLimit, getRateLimitKey } from "lib/security/rate-limit";
  *
  * No role inference. No permission checks. Binary admin/customer.
  */
-
-const getSupabaseServerClient = async () => {
-  const cookieStore = await cookies();
-  return createServerClient(
-    requireEnv.supabaseUrl(),
-    requireEnv.supabaseAnonKey(),
-    {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
-        },
-        set(name: string, value: string, options: CookieOptions) {
-          try {
-            cookieStore.set({ name, value, ...options });
-          } catch {
-            // Server Component — ignored.
-          }
-        },
-        remove(name: string, options: CookieOptions) {
-          try {
-            cookieStore.set({ name, value: "", ...options });
-          } catch {
-            // ignore
-          }
-        },
-      },
-    },
-  );
-};
 
 const passwordIsStrong = (password: string): boolean => {
   if (password.length < 10) return false;
@@ -227,6 +201,33 @@ export async function customerRegisterAction(formData: FormData): Promise<void> 
   });
   if (error) {
     redirect(`/account/register?error=${encodeURIComponent(error.message)}`);
+  }
+
+  // Create the application customer record immediately at registration.
+  // The identity chain auth.users.id → customers.auth_user_id must be
+  // established from the moment of account creation, not deferred to the
+  // first checkout. Uses service role to bypass RLS (safe — this is a
+  // server action gated by rate limiting and input validation).
+  if (data.user) {
+    const fullName = `${firstName}${lastName ? " " + lastName : ""}`;
+    try {
+      const { data: existing } = await db
+        .from("customers")
+        .select("id")
+        .eq("auth_user_id", data.user.id)
+        .maybeSingle();
+      if (!existing?.id) {
+        await db.from("customers").insert({
+          email,
+          full_name: fullName,
+          auth_user_id: data.user.id,
+        });
+      }
+    } catch {
+      // Non-fatal: the customer record will be created on first account
+      // page visit via getOrCreateCustomerId, or at first checkout.
+      console.error("[customerRegisterAction] failed to create customer record for", email);
+    }
   }
 
   // If the project has email confirmation enabled, `data.session` is null

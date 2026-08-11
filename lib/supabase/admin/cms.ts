@@ -18,7 +18,7 @@ export async function listTestimonials(): Promise<TestimonialRow[]> {
   try {
     const { data, error } = await supabase
       .from("testimonials")
-      .select("*")
+      .select("id,author_name,author_role,body,rating,image_url,is_published,created_at")
       .order("created_at", { ascending: false });
     if (error) {
       if (isMissingTable(error.code)) return [];
@@ -43,7 +43,7 @@ export async function getTestimonial(id: string): Promise<TestimonialRow | null>
   try {
     const { data, error } = await supabase
       .from("testimonials")
-      .select("*")
+      .select("id,author_name,author_role,body,rating,image_url,is_published,created_at")
       .eq("id", id)
       .maybeSingle();
     if (error) return null;
@@ -109,7 +109,7 @@ export async function listPromotions(): Promise<PromotionRow[]> {
   try {
     const { data, error } = await supabase
       .from("promotions")
-      .select("*")
+      .select("id,title,body,code,discount_type,discount_value,starts_at,ends_at,is_active")
       .order("created_at", { ascending: false });
     if (error) {
       if (isMissingTable(error.code)) return [];
@@ -146,7 +146,7 @@ export async function listCmsPages(): Promise<CmsPageRow[]> {
   try {
     const { data, error } = await supabase
       .from("cms_pages")
-      .select("*")
+      .select("id,slug,title,body,seo_title,seo_description,is_published,created_at")
       .order("created_at", { ascending: false });
     if (error) {
       if (isMissingTable(error.code)) return [];
@@ -196,7 +196,7 @@ export async function getCmsPageById(id: string): Promise<CmsPageRow | null> {
   try {
     const { data, error } = await supabase
       .from("cms_pages")
-      .select("*")
+      .select("id,slug,title,body,seo_title,seo_description,is_published,created_at")
       .eq("id", id)
       .maybeSingle();
     if (error) return null;

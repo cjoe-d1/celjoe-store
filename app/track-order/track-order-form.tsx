@@ -1,48 +1,40 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useFormStatus } from "react-dom";
 import {
-  Alert,
   Button,
   Field,
   FormSection,
   TextInput,
 } from "components/chds";
 
+function SubmitButton() {
+  const { pending } = useFormStatus();
+  return (
+    <Button type="submit" disabled={pending}>
+      {pending ? "Looking up your order..." : "Track my order"}
+    </Button>
+  );
+}
+
 export function TrackOrderForm({
   action,
 }: {
   action: (formData: FormData) => Promise<void>;
 }) {
-  const [error, setError] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
-
-  const handleSubmit = (formData: FormData) => {
-    setError(null);
-    startTransition(async () => {
-      try {
-        await action(formData);
-      } catch (e) {
-        setError(
-          e instanceof Error ? e.message : "Unable to track this order.",
-        );
-      }
-    });
-  };
-
   return (
     <form
       className="flex flex-col gap-[var(--ds-space-5)]"
-      action={handleSubmit}
+      action={action}
     >
       <FormSection
-        title="Order number"
-        description="The number is on your receipt and confirmation email. It begins with CJ-."
+        title="Track your order"
+        description="Enter your order number (e.g. CJ-XXXX-XXXX) or the tracking code from your confirmation."
       >
-        <Field label="Order number">
+        <Field label="Order number or tracking code">
           <TextInput
             name="orderNumber"
-            placeholder="CJ-XXXX-XXXX"
+            placeholder="CJ-XXXX-XXXX or tracking code"
             required
             autoComplete="off"
             inputMode="text"
@@ -59,10 +51,7 @@ export function TrackOrderForm({
           />
         </Field>
       </FormSection>
-      {error ? <Alert tone="danger" title="Unable to track">{error}</Alert> : null}
-      <Button type="submit" disabled={isPending}>
-        {isPending ? "Looking up your order..." : "Track my order"}
-      </Button>
+      <SubmitButton />
     </form>
   );
 }

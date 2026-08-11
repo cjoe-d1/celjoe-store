@@ -10,8 +10,9 @@ import {
 } from "components/chds";
 import { submitQuotationAction } from "lib/actions/quotations";
 import { buildCustomerQuotationWaText, waChatUrl } from "lib/services/whatsapp";
+import { siteConfig } from "lib/site-config";
 
-const BUSINESS_WHATSAPP = process.env.NEXT_PUBLIC_BUSINESS_WHATSAPP ?? "";
+const BUSINESS_WHATSAPP = siteConfig.contact.whatsapp;
 
 export function QuotationForm() {
   const [state, formAction, isPending] = useActionState(
@@ -61,20 +62,22 @@ export function QuotationForm() {
           Your quotation <strong>{quoteNumber}</strong> has been received. We will review it and get back to you within 24 hours.
         </p>
 
-        <div className="mt-[var(--ds-space-6)]">
-          <p className="mb-[var(--ds-space-3)] text-[length:var(--ds-text-caption)] text-[var(--ds-color-muted)]">
-            For a faster response, send us the details on WhatsApp.
-          </p>
-          <Button asChild>
-            <a
-              href={waChatUrl(BUSINESS_WHATSAPP, waText)}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Continue on WhatsApp
-            </a>
-          </Button>
-        </div>
+        {BUSINESS_WHATSAPP ? (
+          <div className="mt-[var(--ds-space-6)]">
+            <p className="mb-[var(--ds-space-3)] text-[length:var(--ds-text-caption)] text-[var(--ds-color-muted)]">
+              For a faster response, send us the details on WhatsApp.
+            </p>
+            <Button asChild>
+              <a
+                href={waChatUrl(BUSINESS_WHATSAPP, waText)}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Continue on WhatsApp
+              </a>
+            </Button>
+          </div>
+        ) : null}
 
         <div className="mt-[var(--ds-space-6)] flex flex-wrap justify-center gap-[var(--ds-space-3)]">
           <Button variant={BUSINESS_WHATSAPP ? "outline" : "primary"} asChild>

@@ -1,8 +1,6 @@
-import { cookies } from "next/headers";
-import { createServerClient, type CookieOptions } from "@supabase/ssr";
-import { requireEnv } from "config/env";
-import { requireCustomerSession } from "lib/auth/session";
+import { requireCustomerSession, getSupabaseServerClient } from "lib/auth/session";
 import type { OrderStatus } from "lib/supabase/orders";
+import { db } from "lib/supabase/admin";
 
 export type CustomerOrderSummary = {
   id: string;
@@ -27,72 +25,101 @@ export type CustomerAddress = {
   createdAt: string;
 };
 
-const getSupabaseServerClient = async () => {
-  const cookieStore = await cookies();
-  return createServerClient(
-    requireEnv.supabaseUrl(),
-    requireEnv.supabaseAnonKey(),
-    {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
-        },
-        set(name: string, value: string, options: CookieOptions) {
-          try {
-            cookieStore.set({ name, value, ...options });
-          } catch {
-            // ignore
-          }
-        },
-        remove(name: string, options: CookieOptions) {
-          try {
-            cookieStore.set({ name, value: "", ...options });
-          } catch {
-            // ignore
-          }
-        },
-      },
-    },
-  );
-};
-
+/**
+ * Resolves the authenticated Supabase user to a `customers.id`.
+ *
+ * Identity chain:  auth.users.id → customers.auth_user_id → customers.id
+ *
+ * Resolution strategy:
+ *   1. Primary (RLS-enforced): look up by auth_user_id via the SSR client.
+ *      The JWT sub claim must match auth_user_id — RLS enforces this.
+ *   2. Legacy reconciliation (service role): if no match by auth_user_id,
+ *      look up by email. This handles pre-existing customer records created
+ *      before the auth_user_id column was added (migration 0009). The
+ *      auth_user_id is updated so subsequent lookups use the fast path.
+ *   3. Create (service role): if no customer record exists, insert one
+ *      linked to the authenticated user.
+ *
+ * Email is never used as the primary identity key — auth_user_id is the
+ * authoritative link between auth.users and customers.
+ */
 export const getOrCreateCustomerId = async (
   supabase: Awaited<ReturnType<typeof getSupabaseServerClient>>,
   userId: string,
   email: string,
   fullName: string | null,
 ): Promise<string | null> => {
-  const { data: existing } = await supabase
+  // 1. Primary — find by auth_user_id (RLS-enforced, fast path).
+  const { data: existing, error: lookupErr } = await supabase
     .from("customers")
     .select("id")
     .eq("auth_user_id", userId)
     .maybeSingle();
+
+  if (lookupErr) {
+    console.error("[getOrCreateCustomerId] auth_user_id lookup failed:", lookupErr.message);
+  }
   if (existing && "id" in existing && existing.id) return existing.id as string;
 
-  const { data: fallback } = await supabase
-    .from("customers")
-    .select("id")
-    .eq("email", email)
-    .maybeSingle();
-  if (fallback && "id" in fallback && fallback.id) {
-    await supabase
+  // 2. Legacy reconciliation — service-role lookup by email.
+  //    Only needed for customer records that exist without a linked
+  //    auth_user_id (created before migration 0009, or by guest checkout).
+  try {
+    const { data: legacy } = await db
       .from("customers")
-      .update({ auth_user_id: userId })
-      .eq("id", fallback.id as string);
-    return fallback.id as string;
+      .select("id, auth_user_id")
+      .eq("email", email)
+      .maybeSingle();
+
+    if (legacy && "id" in legacy && legacy.id) {
+      // If the legacy record has a different auth_user_id, do NOT
+      // overwrite it — that would steal another user's customer record.
+      if (legacy.auth_user_id && legacy.auth_user_id !== userId) {
+        console.error(
+          `[getOrCreateCustomerId] email ${email} is already linked to a different auth user. ` +
+          `Requested userId=${userId}, existing auth_user_id=${legacy.auth_user_id}. ` +
+          `Skipping reconciliation to prevent identity theft.`,
+        );
+        return null;
+      }
+      // Safe to link: auth_user_id is null or already matches.
+      await db
+        .from("customers")
+        .update({ auth_user_id: userId })
+        .eq("id", legacy.id);
+      return legacy.id as string;
+    }
+  } catch (err) {
+    console.error("[getOrCreateCustomerId] legacy email lookup failed:", err);
   }
 
-  const { data: inserted, error } = await supabase
-    .from("customers")
-    .insert({
-      email,
-      full_name: fullName ?? null,
-      auth_user_id: userId,
-    })
-    .select("id")
-    .single();
-  if (error || !inserted || !("id" in inserted) || !inserted.id) return null;
-  return inserted.id as string;
+  // 3. Create — insert a new customer record via service role.
+  try {
+    const { data: inserted, error: insertErr } = await db
+      .from("customers")
+      .insert({
+        email,
+        full_name: fullName ?? null,
+        auth_user_id: userId,
+      })
+      .select("id")
+      .single();
+
+    if (insertErr) {
+      console.error("[getOrCreateCustomerId] insert failed:", insertErr.message, insertErr.details);
+      return null;
+    }
+    if (inserted && "id" in inserted && inserted.id) {
+      return inserted.id as string;
+    }
+  } catch (err) {
+    console.error("[getOrCreateCustomerId] insert error:", err);
+  }
+
+  console.error(
+    `[getOrCreateCustomerId] all resolution paths failed for userId=${userId}, email=${email}`,
+  );
+  return null;
 };
 
 export async function listCustomerOrders(): Promise<CustomerOrderSummary[]> {
@@ -238,6 +265,52 @@ export async function deleteCustomerAddress(
     .delete()
     .eq("id", addressId)
     .eq("customer_id", customerId);
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
+}
+
+export type UpdateCustomerAddressInput = Partial<
+  Omit<CustomerAddress, "id" | "createdAt">
+> & { id: string };
+
+export async function updateCustomerAddress(
+  input: UpdateCustomerAddressInput,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  let session;
+  try {
+    session = await requireCustomerSession();
+  } catch {
+    return { ok: false, error: "Not signed in." };
+  }
+  const supabase = await getSupabaseServerClient();
+  const customerId = await getOrCreateCustomerId(
+    supabase,
+    session.userId,
+    session.email,
+    session.fullName,
+  );
+  if (!customerId) {
+    return { ok: false, error: "Could not resolve your customer record." };
+  }
+
+  // Build the update payload — only include fields that were provided.
+  const payload: Record<string, unknown> = {};
+  if (input.label !== undefined) payload.label = input.label;
+  if (input.line1 !== undefined) payload.line1 = input.line1;
+  if (input.line2 !== undefined) payload.line2 = input.line2;
+  if (input.city !== undefined) payload.city = input.city;
+  if (input.state !== undefined) payload.state = input.state;
+  if (input.postalCode !== undefined) payload.postal_code = input.postalCode;
+  if (input.instructions !== undefined) payload.instructions = input.instructions;
+  if (input.isDefault !== undefined) payload.is_default = input.isDefault;
+  payload.updated_at = new Date().toISOString();
+
+  const { error } = await supabase
+    .from("customer_addresses")
+    .update(payload)
+    .eq("id", input.id)
+    .eq("customer_id", customerId);
+
   if (error) return { ok: false, error: error.message };
   return { ok: true };
 }

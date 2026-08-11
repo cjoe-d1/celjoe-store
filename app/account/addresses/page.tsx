@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { AccountShell } from "../_shell";
 import { listCustomerAddresses } from "lib/supabase/customer";
 import { getCurrentCustomerSession } from "lib/auth/session";
-import { createAddressAction, deleteAddressAction } from "./actions";
+import { createAddressAction, deleteAddressAction, updateAddressAction } from "./actions";
 
 export const metadata: Metadata = {
   title: "Addresses",
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-type SearchParams = Promise<{ error?: string; saved?: string }>;
+type SearchParams = Promise<{ error?: string; saved?: string; updated?: string; edit?: string }>;
 
 export default async function AddressesPage(props: { searchParams: SearchParams }) {
   const sp = await props.searchParams;
@@ -38,6 +38,14 @@ export default async function AddressesPage(props: { searchParams: SearchParams 
           Address saved.
         </div>
       ) : null}
+      {sp.updated === "1" ? (
+        <div
+          role="status"
+          className="mb-[var(--ds-space-4)] rounded-[var(--ds-radius-md)] border border-[var(--ds-color-success)]/40 bg-[var(--ds-color-success)]/10 p-[var(--ds-space-3)] text-[length:var(--ds-text-body)] text-[var(--ds-color-fg)]"
+        >
+          Address updated.
+        </div>
+      ) : null}
       {sp.error ? (
         <div
           role="alert"
@@ -54,30 +62,79 @@ export default async function AddressesPage(props: { searchParams: SearchParams 
               key={a.id}
               className="rounded-[var(--ds-radius-lg)] border border-[var(--ds-color-border)] bg-[var(--ds-color-surface)] p-[var(--ds-space-5)]"
             >
-              <div className="flex flex-wrap items-start justify-between gap-[var(--ds-space-3)]">
-                <div>
-                  <p className="font-[var(--ds-font-weight-medium)] text-[var(--ds-color-fg)]">
-                    {a.label ?? "Address"}
-                  </p>
-                  <p className="mt-[var(--ds-space-1)] text-[length:var(--ds-text-body)] text-[var(--ds-color-muted)]">
-                    {a.line1}
-                    {a.line2 ? `, ${a.line2}` : ""}, {a.city}
-                    {a.state ? `, ${a.state}` : ""}
-                    {a.postalCode ? ` ${a.postalCode}` : ""}
-                  </p>
-                  {a.instructions ? (
-                    <p className="mt-[var(--ds-space-1)] text-[length:var(--ds-text-caption)] text-[var(--ds-color-muted)]">
-                      {a.instructions}
-                    </p>
-                  ) : null}
-                </div>
-                <form action={deleteAddressAction}>
+              {sp.edit === a.id ? (
+                <form action={updateAddressAction}>
                   <input type="hidden" name="address_id" value={a.id} />
-                  <Button type="submit" variant="ghost">
-                    Remove
-                  </Button>
+                  <FormSection title="Edit address">
+                    <Field label="Label">
+                      <TextInput id="label" name="label" defaultValue={a.label ?? ""} placeholder="Home, Office, ..." />
+                    </Field>
+                    <div className="grid grid-cols-1 gap-[var(--ds-space-4)] sm:grid-cols-2">
+                      <Field label="Street">
+                        <TextInput id="line1" name="line1" defaultValue={a.line1} required />
+                      </Field>
+                      <Field label="Apartment / Building">
+                        <TextInput id="line2" name="line2" defaultValue={a.line2 ?? ""} />
+                      </Field>
+                      <Field label="City">
+                        <TextInput id="city" name="city" defaultValue={a.city} required />
+                      </Field>
+                      <Field label="State">
+                        <TextInput id="state" name="state" defaultValue={a.state} required />
+                      </Field>
+                      <Field label="Postal code">
+                        <TextInput id="postal_code" name="postal_code" defaultValue={a.postalCode ?? ""} />
+                      </Field>
+                    </div>
+                    <Field label="Delivery instructions" hint="Gate code, building, landmarks — anything that helps.">
+                      <TextInput id="instructions" name="instructions" defaultValue={a.instructions ?? ""} />
+                    </Field>
+                  </FormSection>
+                  <div className="mt-[var(--ds-space-4)] flex justify-end gap-[var(--ds-space-2)]">
+                    <Button type="submit" variant="secondary">
+                      Save changes
+                    </Button>
+                    <Button type="button" variant="ghost" asChild>
+                      <a href="/account/addresses">Cancel</a>
+                    </Button>
+                  </div>
                 </form>
-              </div>
+              ) : (
+                <div className="flex flex-wrap items-start justify-between gap-[var(--ds-space-3)]">
+                  <div>
+                    <p className="font-[var(--ds-font-weight-medium)] text-[var(--ds-color-fg)]">
+                      {a.label ?? "Address"}
+                      {a.isDefault ? (
+                        <span className="ml-[var(--ds-space-2)] rounded-full bg-[var(--ds-color-accent)]/10 px-[var(--ds-space-2)] py-px text-[length:var(--ds-text-caption)] text-[var(--ds-color-accent)]">
+                          Default
+                        </span>
+                      ) : null}
+                    </p>
+                    <p className="mt-[var(--ds-space-1)] text-[length:var(--ds-text-body)] text-[var(--ds-color-muted)]">
+                      {a.line1}
+                      {a.line2 ? `, ${a.line2}` : ""}, {a.city}
+                      {a.state ? `, ${a.state}` : ""}
+                      {a.postalCode ? ` ${a.postalCode}` : ""}
+                    </p>
+                    {a.instructions ? (
+                      <p className="mt-[var(--ds-space-1)] text-[length:var(--ds-text-caption)] text-[var(--ds-color-muted)]">
+                        {a.instructions}
+                      </p>
+                    ) : null}
+                  </div>
+                  <div className="flex gap-[var(--ds-space-1)]">
+                    <Button variant="ghost" asChild>
+                      <a href={`/account/addresses?edit=${encodeURIComponent(a.id)}`}>Edit</a>
+                    </Button>
+                    <form action={deleteAddressAction}>
+                      <input type="hidden" name="address_id" value={a.id} />
+                      <Button type="submit" variant="ghost">
+                        Remove
+                      </Button>
+                    </form>
+                  </div>
+                </div>
+              )}
             </li>
           ))}
         </ul>
@@ -92,49 +149,51 @@ export default async function AddressesPage(props: { searchParams: SearchParams 
         </div>
       )}
 
-      <form
-        className="mt-[var(--ds-space-6)] rounded-[var(--ds-radius-xl)] border border-[var(--ds-color-border)] bg-[var(--ds-color-surface)] p-[var(--ds-space-8)]"
-        action={createAddressAction}
-      >
-        <FormSection
-          title="Add an address"
-          description="We only store what we need to deliver to you."
+      {sp.edit ? null : (
+        <form
+          className="mt-[var(--ds-space-6)] rounded-[var(--ds-radius-xl)] border border-[var(--ds-color-border)] bg-[var(--ds-color-surface)] p-[var(--ds-space-8)]"
+          action={createAddressAction}
         >
-          <Field label="Label">
-            <TextInput
-              id="label"
-              name="label"
-              placeholder="Home, Office, ..."
-            />
-          </Field>
-          <div className="grid grid-cols-1 gap-[var(--ds-space-4)] sm:grid-cols-2">
-            <Field label="Street">
-              <TextInput id="line1" name="line1" required />
-            </Field>
-            <Field label="Apartment / Building">
-              <TextInput id="line2" name="line2" />
-            </Field>
-            <Field label="City">
-              <TextInput id="city" name="city" required />
-            </Field>
-            <Field label="State">
-              <TextInput id="state" name="state" required />
-            </Field>
-            <Field label="Postal code">
-              <TextInput id="postal_code" name="postal_code" />
-            </Field>
-          </div>
-          <Field
-            label="Delivery instructions"
-            hint="Gate code, building, landmarks — anything that helps."
+          <FormSection
+            title="Add an address"
+            description="We only store what we need to deliver to you."
           >
-            <TextInput id="instructions" name="instructions" />
-          </Field>
-        </FormSection>
-        <div className="mt-[var(--ds-space-5)] flex justify-end">
-          <Button type="submit">Save address</Button>
-        </div>
-      </form>
+            <Field label="Label">
+              <TextInput
+                id="label"
+                name="label"
+                placeholder="Home, Office, ..."
+              />
+            </Field>
+            <div className="grid grid-cols-1 gap-[var(--ds-space-4)] sm:grid-cols-2">
+              <Field label="Street">
+                <TextInput id="line1" name="line1" required />
+              </Field>
+              <Field label="Apartment / Building">
+                <TextInput id="line2" name="line2" />
+              </Field>
+              <Field label="City">
+                <TextInput id="city" name="city" required />
+              </Field>
+              <Field label="State">
+                <TextInput id="state" name="state" required />
+              </Field>
+              <Field label="Postal code">
+                <TextInput id="postal_code" name="postal_code" />
+              </Field>
+            </div>
+            <Field
+              label="Delivery instructions"
+              hint="Gate code, building, landmarks — anything that helps."
+            >
+              <TextInput id="instructions" name="instructions" />
+            </Field>
+          </FormSection>
+          <div className="mt-[var(--ds-space-5)] flex justify-end">
+            <Button type="submit">Save address</Button>
+          </div>
+        </form>
+      )}
     </AccountShell>
   );
 }

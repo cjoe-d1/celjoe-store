@@ -44,18 +44,31 @@ export {
  * across Android, iPhone, and WhatsApp Web.
  */
 function normalisePhone(phone: string): string {
+  // Strip everything except digits and +
   let cleaned = phone.replace(/[^\d+]/g, "");
-  // Strip any existing + so we can re-add it consistently
   cleaned = cleaned.replace(/^\+/, "");
 
-  // Nigerian number normalization: if the number starts with 0 after stripping +,
-  // it's a local Nigerian format — prepend 234
-  if (cleaned.startsWith("0") && cleaned.length === 11) {
-    cleaned = `234${cleaned.slice(1)}`;
+  // Detect Nigerian country code prefix and strip temporarily so we
+   // can normalise the local part independently.
+   if (cleaned.startsWith("234")) {
+     cleaned = cleaned.slice(3);
+   }
+
+  // Strip any leading 0 from the local number (handles formats like
+  // "08012345678", "23408012345678", "+23408012345678").
+  cleaned = cleaned.replace(/^0+/, "");
+
+  // If we end up with an empty string the original input was invalid.
+  if (!cleaned) {
+    console.warn("[normalisePhone] invalid phone number after cleaning:", phone);
+    return "";
   }
 
-  // If the number starts with country code 234 but without +, it's already valid
-  // Just re-add the + prefix
+  // Re-add the Nigerian country code unconditionally.  For non-Nigerian
+  // numbers the caller should validate upstream; this module is
+  // currently only used for Nigerian business WhatsApp.
+  cleaned = `234${cleaned}`;
+
   return `+${cleaned}`;
 }
 

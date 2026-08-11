@@ -70,10 +70,11 @@ export async function sendPushToAllAdmins(
     }
 
     if (!subscriptions?.length) {
-      console.log("[Push] No admin subscriptions — skipping.");
+      console.log("[Push] No admin subscriptions — skipping push for:", payload.title);
       return;
     }
 
+    console.log(`[Push] Dispatching "${payload.title}" to ${subscriptions.length} device(s)`);
     const pushBody = JSON.stringify(payload);
 
     const results = await Promise.allSettled(
@@ -111,6 +112,8 @@ export async function sendPushToAllAdmins(
     );
 
     const failures = results.filter((r) => r.status === "rejected");
+    const successes = results.filter((r) => r.status === "fulfilled");
+    console.log(`[Push] ${successes.length}/${subscriptions.length} delivered, ${failures.length} failed`);
     if (failures.length > 0) {
       console.warn(
         `[Push] ${failures.length}/${subscriptions.length} subscriptions failed.`,

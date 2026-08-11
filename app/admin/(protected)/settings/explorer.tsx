@@ -312,13 +312,7 @@ export function SettingsExplorer({ initial }: Props) {
           <div className="md:col-span-2 text-[length:var(--ds-text-caption)] text-[var(--ds-color-muted)]">
             The Paystack secret key is configured via the <code>PAYSTACK_SECRET_KEY</code> environment variable on your deployment platform. It is never stored or displayed here.
           </div>
-          <div className="md:col-span-2 text-[length:var(--ds-text-caption)] text-[var(--ds-color-muted)]">
-            Test that push notifications work on admin devices. Must have an active push subscription in the current browser/PWA.
-          </div>
-          <div className="md:col-span-2 flex justify-between gap-[var(--ds-space-4)]">
-            <Button onClick={testPush} variant="outline" disabled={pending}>
-              {pending ? "Sending…" : "Send Test Notification"}
-            </Button>
+          <div className="md:col-span-2 flex justify-end gap-[var(--ds-space-4)]">
             <Button onClick={submitPayments} variant="primary" disabled={pending}>
               Save payments
             </Button>
@@ -351,10 +345,18 @@ export function SettingsExplorer({ initial }: Props) {
           <Checkbox name="orderReady" checked={Boolean(notifications.orderReady)} onChange={(e) => (notifications.orderReady = e.target.checked)} label="Send order ready notification" />
           <Checkbox name="orderDelivered" checked={Boolean(notifications.orderDelivered)} onChange={(e) => (notifications.orderDelivered = e.target.checked)} label="Send order delivered notification" />
           <Checkbox name="marketingEmail" checked={Boolean(notifications.marketingEmail)} onChange={(e) => (notifications.marketingEmail = e.target.checked)} label="Marketing emails" />
-          <div className="flex justify-end">
-            <Button onClick={submitNotifications} variant="primary" disabled={pending}>
-              Save notifications
-            </Button>
+          <div className="border-t border-[var(--ds-color-border)] pt-[var(--ds-space-4)] mt-[var(--ds-space-2)]">
+            <div className="text-[length:var(--ds-text-caption)] text-[var(--ds-color-muted)] mb-[var(--ds-space-2)]">
+              Test that push notifications work on admin devices. Must have an active push subscription in the current browser/PWA.
+            </div>
+            <div className="flex justify-between gap-[var(--ds-space-4)]">
+              <Button onClick={testPush} variant="outline" disabled={pending}>
+                {pending ? "Sending…" : "Send Test Notification"}
+              </Button>
+              <Button onClick={submitNotifications} variant="primary" disabled={pending}>
+                Save notifications
+              </Button>
+            </div>
           </div>
         </div>
       ) : null}

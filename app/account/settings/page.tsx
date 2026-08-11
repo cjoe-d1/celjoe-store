@@ -6,9 +6,8 @@ import {
   customerChangePasswordAction,
   customerUpdateProfileAction,
 } from "lib/auth/actions";
-import { getCurrentCustomerSession } from "lib/auth/session";
+import { getCurrentCustomerSession, getSupabaseServerClient } from "lib/auth/session";
 import { redirect } from "next/navigation";
-import { createSupabaseClient } from "lib/supabase/client";
 
 export const metadata: Metadata = {
   title: "Account Settings",
@@ -52,13 +51,13 @@ export default async function SettingsPage(props: { searchParams: SearchParams }
   // auth metadata alone don't sync to this table until the action runs.
   let phone = "";
   try {
-    const supabase = createSupabaseClient();
+    const supabase = await getSupabaseServerClient();
     const { data } = await supabase
       .from("customers")
       .select("phone")
       .eq("auth_user_id", session.userId)
       .maybeSingle();
-    phone = data?.phone ?? "";
+    phone = (data?.phone as string) ?? "";
   } catch {
     // Non-critical: fall back to session metadata.
     phone = session.phone ?? "";

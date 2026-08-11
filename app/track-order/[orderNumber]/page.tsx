@@ -14,6 +14,7 @@ import {
   getOrderByNumber,
   statusLabel,
 } from "lib/supabase/orders";
+import { db } from "lib/supabase/admin";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -35,7 +36,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function OrderDetailPage({ params }: PageProps) {
   const { orderNumber } = await params;
-  const order = await getOrderByNumber(decodeURIComponent(orderNumber));
+  const order = await getOrderByNumber(decodeURIComponent(orderNumber), db);
   if (!order) notFound();
 
   const timeline = buildOrderTimeline(order.orderStatus);

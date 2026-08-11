@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { supabase } from "lib/supabase/client";
 
 export type HomepageSectionType =
@@ -31,7 +32,12 @@ const toHomepageSection = (row: any): HomepageSection => ({
   updatedAt: row.updated_at as string,
 });
 
-export const getHomepageSections = async (): Promise<HomepageSection[]> => {
+/**
+ * Fetch enabled homepage sections ordered by display_order.
+ * Wrapped with React cache() so that generateMetadata() and the page
+ * component can share a single DB query during the same request.
+ */
+export const getHomepageSections = cache(async (): Promise<HomepageSection[]> => {
   const { data, error } = await supabase
     .from("homepage_sections")
     .select("id,section_type,display_order,is_enabled,content,created_at,updated_at")
@@ -44,4 +50,4 @@ export const getHomepageSections = async (): Promise<HomepageSection[]> => {
     throw error;
   }
   return (data ?? []).map((row: any) => toHomepageSection(row));
-};
+});

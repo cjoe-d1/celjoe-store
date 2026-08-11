@@ -27,10 +27,10 @@ export type CustomerSession = {
 };
 
 const ADMIN_SESSION_COOKIE = "celjoe_session";
-const SUPABASE_COOKIE_PREFIX = "sb-";
+export const SUPABASE_COOKIE_PREFIX = "sb-";
 const ADMIN_SESSION_MAX_AGE = 60 * 60 * 8; // 8 hours
 
-const getSupabaseServerClient = async () => {
+export const getSupabaseServerClient = async () => {
   const cookieStore = await cookies();
   return createServerClient(
     requireEnv.supabaseUrl(),

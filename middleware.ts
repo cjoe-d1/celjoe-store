@@ -1,4 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { createServerClient } from "@supabase/ssr";
+import { requireEnv } from "config/env";
 
 const ADMIN_PROTECTED_PREFIXES = ["/admin"];
 const ADMIN_PUBLIC_PATHS = new Set<string>([
@@ -48,12 +50,29 @@ const CONTENT_SECURITY_POLICY = [
   "object-src 'none'",
 ].join("; ");
 
-export function middleware(request: NextRequest) {
+const setSecurityHeaders = (response: NextResponse) => {
+  response.headers.set("X-Frame-Options", "DENY");
+  response.headers.set("X-Content-Type-Options", "nosniff");
+  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  response.headers.set(
+    "Permissions-Policy",
+    "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
+  );
+  response.headers.set("Content-Security-Policy", CONTENT_SECURITY_POLICY);
+  response.headers.set("X-DNS-Prefetch-Control", "on");
+  response.headers.set("Cross-Origin-Opener-Policy", "same-origin");
+  response.headers.set("Cross-Origin-Resource-Policy", "same-origin");
+};
+
+export async function middleware(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
   const hasAdminSession = Boolean(request.cookies.get("celjoe_session")?.value);
   const hasCustomerSession = hasSupabaseAuthCookie(request);
 
-  // --- Auth redirects ---
+  // --- Admin auth ---
+  // Admin auth uses a custom celjoe_session cookie. No Supabase token
+  // refresh is needed — the cookie has a fixed 8-hour TTL and is parsed
+  // directly. This path is intentionally NOT touched by customer auth.
 
   if (isAdminPath(pathname) && !ADMIN_PUBLIC_PATHS.has(pathname)) {
     if (!hasAdminSession) {
@@ -62,7 +81,22 @@ export function middleware(request: NextRequest) {
       url.search = `?next=${encodeURIComponent(pathname + (search || ""))}`;
       return NextResponse.redirect(url);
     }
+    // Admin is authenticated — simple pass-through with headers.
+    const response = NextResponse.next();
+    setSecurityHeaders(response);
+    return response;
   }
+
+  // --- Customer auth (protected routes) ---
+  // This is the session-refresh path. When an access token has expired
+  // but a refresh token is still valid, Supabase needs to write new
+  // cookies to the response. Server Components CANNOT write cookies
+  // (cookieStore.set() throws in RSC). The middleware runs in a request
+  // context where cookie writes succeed, so we call getSession() here
+  // to trigger token refresh and persist the new tokens.
+  //
+  // If the refresh token has also expired, getSession() returns null
+  // and we redirect to login.
 
   if (isAccountPath(pathname) && !ACCOUNT_PUBLIC_PATHS.has(pathname)) {
     if (!hasCustomerSession) {
@@ -71,36 +105,55 @@ export function middleware(request: NextRequest) {
       url.search = `?next=${encodeURIComponent(pathname + (search || ""))}`;
       return NextResponse.redirect(url);
     }
+
+    // Session cookies exist — attempt to refresh the Supabase session.
+    // This writes any refreshed tokens to the response, preventing the
+    // stale-token logout problem.
+    const response = NextResponse.next();
+    try {
+      const supabase = createServerClient(
+        requireEnv.supabaseUrl(),
+        requireEnv.supabaseAnonKey(),
+        {
+          cookies: {
+            get(name: string) {
+              return request.cookies.get(name)?.value;
+            },
+            set(name: string, value: string, options) {
+              response.cookies.set({ name, value, ...options });
+            },
+            remove(name: string, options) {
+              response.cookies.set({ name, value: "", ...options });
+            },
+          },
+        },
+      );
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) {
+        // Refresh token is also expired — clear cookies and redirect.
+        for (const cookie of request.cookies.getAll()) {
+          if (cookie.name.startsWith("sb-")) {
+            response.cookies.set({ name: cookie.name, value: "", maxAge: 0, path: "/" });
+          }
+        }
+        const url = request.nextUrl.clone();
+        url.pathname = "/account/login";
+        url.search = `?next=${encodeURIComponent(pathname + (search || ""))}`;
+        return NextResponse.redirect(url);
+      }
+    } catch {
+      // Auth service unavailable — let the page handle it (it will
+      // redirect to login if needed). Don't block the user entirely.
+    }
+
+    setSecurityHeaders(response);
+    return response;
   }
 
-  // --- Security headers ---
-
+  // --- All other routes ---
+  // No auth gate — just security headers.
   const response = NextResponse.next();
-
-  // Prevent clickjacking
-  response.headers.set("X-Frame-Options", "DENY");
-  // Prevent MIME-sniffing
-  response.headers.set("X-Content-Type-Options", "nosniff");
-  // Restrict referrer information
-  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
-  // Disable unnecessary browser features
-  response.headers.set(
-    "Permissions-Policy",
-    "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
-  );
-  // Content Security Policy
-  response.headers.set("Content-Security-Policy", CONTENT_SECURITY_POLICY);
-  // Prevent embedding in iframes (belt-and-suspenders with CSP)
-  response.headers.set("X-DNS-Prefetch-Control", "on");
-  // Cross-Origin isolation hints
-  response.headers.set("Cross-Origin-Opener-Policy", "same-origin");
-  response.headers.set("Cross-Origin-Resource-Policy", "same-origin");
-
-  // HSTS is set in next.config.ts headers — middleware can't control the
-  // Strict-Transport-Security header on the initial TLS handshake (the
-  // browser requires it to come from the HTTPS response headers, which
-  // Next.js serves via the `headers()` config function).
-
+  setSecurityHeaders(response);
   return response;
 }
 

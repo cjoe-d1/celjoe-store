@@ -12,6 +12,14 @@ import { QuotationActions } from "./quotation-actions";
 
 export const dynamic = "force-dynamic";
 
+const STATUS_PILL_COLORS: Record<string, string> = {
+  pending: "bg-yellow-100 text-yellow-800",
+  quoted: "bg-blue-100 text-blue-800",
+  accepted: "bg-green-100 text-green-800",
+  completed: "bg-emerald-100 text-emerald-800",
+  declined: "bg-red-100 text-red-800",
+};
+
 export async function generateMetadata(props: {
   params: Promise<{ id: string }>;
 }) {
@@ -48,7 +56,7 @@ export default async function AdminQuotationDetailPage(props: {
           <Card variant="dashboard" className="lg:col-span-2">
             <div className="flex items-center justify-between">
               <Label tone="muted">Status</Label>
-              <span className="inline-flex items-center rounded-full bg-blue-100 px-[var(--ds-space-2-5)] py-[var(--ds-space-0-5)] text-[length:var(--ds-text-caption)] font-[var(--ds-font-weight-medium)] capitalize text-blue-800">
+              <span className={`inline-flex items-center rounded-full px-[var(--ds-space-2-5)] py-[var(--ds-space-0-5)] text-[length:var(--ds-text-caption)] font-[var(--ds-font-weight-medium)] capitalize ${STATUS_PILL_COLORS[quotation.status] ?? "bg-gray-100 text-gray-800"}`}>
                 {quotation.status}
               </span>
             </div>

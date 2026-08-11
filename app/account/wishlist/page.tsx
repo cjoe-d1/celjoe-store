@@ -4,7 +4,9 @@ import { Alert, Button, ProductCard } from "components/chds";
 import { AccountShell } from "../_shell";
 import { toProductCardModel } from "lib/product-helpers";
 import { getFeaturedProducts } from "lib/supabase/products";
+import { getCurrentCustomerSession } from "lib/auth/session";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
   title: "Wishlist",
@@ -12,6 +14,10 @@ export const metadata: Metadata = {
 };
 
 export default async function WishlistPage() {
+  const session = await getCurrentCustomerSession();
+  if (!session) {
+    redirect("/account/login?next=/account/wishlist");
+  }
   const suggested = await getFeaturedProducts().catch(() => []);
 
   return (

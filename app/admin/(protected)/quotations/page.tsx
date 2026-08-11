@@ -203,6 +203,7 @@ async function QuotationsList({
                         )}
                         target="_blank"
                         rel="noopener noreferrer"
+                        aria-label={`WhatsApp ${q.customer_name}`}
                         className="rounded-[var(--ds-radius-md)] border border-[var(--ds-color-border)] px-[var(--ds-space-2)] py-[var(--ds-space-1)] text-[length:var(--ds-text-caption)] text-[var(--ds-color-fg)] transition-colors hover:bg-[var(--ds-color-surface-muted)]"
                       >
                         WA

@@ -1,6 +1,7 @@
 import clsx from "clsx";
 import Link from "next/link";
 import Image from "next/image";
+import { images } from "lib/content/images";
 
 export type CategoryModel = {
   id: string;
@@ -19,6 +20,7 @@ export function CategoryTile({
   className?: string;
 }) {
   const href = category.href ?? `/search/${category.slug}`;
+  const imgSrc = category.imageUrl || images.global.catPlaceholder;
 
   return (
     <Link
@@ -30,15 +32,13 @@ export function CategoryTile({
       )}
     >
       <div className="relative aspect-[4/3] w-full bg-[var(--ds-color-surface-muted)]">
-        {category.imageUrl ? (
-          <Image
-            src={category.imageUrl}
-            alt={category.name}
-            fill
-            sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
-            className="object-cover transition-transform duration-[var(--ds-duration-slow)] ease-[var(--ds-ease-decelerate)] group-hover:scale-[1.02]"
-          />
-        ) : null}
+        <Image
+          src={imgSrc}
+          alt={category.name}
+          fill
+          sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
+          className="object-cover transition-transform duration-[var(--ds-duration-slow)] ease-[var(--ds-ease-decelerate)] group-hover:scale-[1.02]"
+        />
       </div>
       <div className="p-[var(--ds-space-5)]">
         <div className="text-[length:var(--ds-text-h4)] font-[var(--ds-font-weight-medium)] text-[var(--ds-color-fg)]">

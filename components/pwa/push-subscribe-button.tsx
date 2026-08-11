@@ -54,10 +54,12 @@ export function PushSubscribeButton() {
 
       // 2. Wait for service worker to be ready
       const registration = await navigator.serviceWorker.ready;
+      console.log("[PushSubscribe] Service worker ready, scope:", registration.scope);
 
       // 3. Subscribe to push
       const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
       if (!vapidPublicKey) {
+        console.error("[PushSubscribe] VAPID public key not configured");
         setError("VAPID public key not configured.");
         setLoading(false);
         return;
@@ -66,14 +68,18 @@ export function PushSubscribeButton() {
       let subscription = await registration.pushManager.getSubscription();
 
       if (!subscription) {
+        console.log("[PushSubscribe] No existing subscription, creating new one");
         subscription = await registration.pushManager.subscribe({
           userVisibleOnly: true,
           applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
         });
+      } else {
+        console.log("[PushSubscribe] Reusing existing subscription");
       }
 
       // 4. Store subscription on server via API route
       const subJson = subscription.toJSON();
+      console.log("[PushSubscribe] Storing subscription on server");
       const response = await fetch("/api/push/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -88,9 +94,11 @@ export function PushSubscribeButton() {
 
       if (!response.ok) {
         const body = await response.text().catch(() => "");
+        console.error("[PushSubscribe] Server rejected subscription:", response.status, body);
         throw new Error(`Server error: ${response.status} ${body}`);
       }
 
+      console.log("[PushSubscribe] Subscription stored successfully");
       setSubscribed(true);
     } catch (err) {
       setError(

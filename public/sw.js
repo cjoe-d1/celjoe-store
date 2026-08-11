@@ -19,12 +19,18 @@ self.addEventListener("activate", (event) => {
 
 // Push event — display notification from server
 self.addEventListener("push", (event) => {
-  if (!event.data) return;
+  console.log("[SW] Push event received");
+  if (!event.data) {
+    console.log("[SW] Push event has no data");
+    return;
+  }
 
   let payload;
   try {
     payload = event.data.json();
-  } catch {
+    console.log("[SW] Push payload:", JSON.stringify(payload).substring(0, 200));
+  } catch (e) {
+    console.log("[SW] Push payload is not JSON, using raw text");
     payload = { title: "CELJOE Store", body: event.data.text() };
   }
 

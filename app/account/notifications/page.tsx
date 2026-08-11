@@ -1,22 +1,19 @@
 import type { Metadata } from "next";
 
-import { Checkbox, Field, FormSection } from "components/chds";
 import { AccountShell } from "../_shell";
+import { getCurrentCustomerSession } from "lib/auth/session";
+import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
   title: "Notifications",
   description: "Choose what we tell you about.",
 };
 
-const NOTIFICATION_OPTIONS = [
-  { id: "order_updates", label: "Order updates", defaultChecked: true, description: "Live status for active orders." },
-  { id: "new_menu", label: "New menu drops", defaultChecked: true, description: "When new meals land in the kitchen." },
-  { id: "smokehouse", label: "Smokehouse weekends", defaultChecked: false, description: "Platter drops and weekend specials." },
-  { id: "catering", label: "Catering news", defaultChecked: false, description: "Event planning tips and seasonal menus." },
-  { id: "promotions", label: "Occasional promos", defaultChecked: false, description: "We keep these rare and considered." },
-];
-
-export default function NotificationsPage() {
+export default async function NotificationsPage() {
+  const session = await getCurrentCustomerSession();
+  if (!session) {
+    redirect("/account/login?next=/account/notifications");
+  }
   return (
     <AccountShell
       current="/account/notifications"

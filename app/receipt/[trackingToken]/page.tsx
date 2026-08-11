@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { formatMoney, mapOrderRow, mapOrderItemRow, type OrderLine } from "lib/supabase/orders";
 import { db } from "lib/supabase/admin";
+import { siteConfig } from "lib/site-config";
 
 export const dynamic = "force-dynamic";
 
@@ -83,7 +84,7 @@ function ReceiptDocument({
       <div className="text-center border-b border-gray-200 pb-4 mb-5 print:border-gray-300">
         <h1 className="text-xl font-bold tracking-tight">CELJOE Grills &amp; Juicebar</h1>
         <p className="text-sm text-gray-500 mt-1">Lagos, Nigeria</p>
-        <p className="text-sm text-gray-500">+234 906 000 4533</p>
+        <p className="text-sm text-gray-500">{siteConfig.contact.phone}</p>
       </div>
 
       {/* Order info */}
@@ -185,6 +186,16 @@ function ReceiptDocument({
             <span className="text-xs font-mono">{paymentRef}</span>
           </div>
         ) : null}
+      </div>
+
+      {/* Print button — hidden when printing */}
+      <div className="mb-5 text-center print:hidden">
+        <button
+          onClick={() => window.print()}
+          className="rounded-lg bg-gray-900 px-6 py-2.5 text-sm font-medium text-white hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400"
+        >
+          Print receipt
+        </button>
       </div>
 
       {/* Footer */}
