@@ -5,6 +5,13 @@ import { db, supabaseAdmin } from "lib/supabase/admin";
 import { requireAdmin } from "lib/auth/guards";
 import { getClientMetadata } from "lib/auth/session";
 import { logAudit, auditFromSession } from "lib/auth/audit";
+import {
+  buildPublicId,
+  buildDeliveryUrl,
+  uploadImageToCloudinary,
+  destroyImage,
+  isCloudinaryPublicId,
+} from "lib/cloudinary";
 
 type ActionResult<T = unknown> =
   | { ok: true; data: T }
@@ -17,10 +24,10 @@ const ALLOWED_MIME = new Set([
   "image/webp",
   "image/gif",
 ]);
-const MAX_BYTES = 8 * 1024 * 1024; // 8 MB
+const MAX_BYTES = 7 * 1024 * 1024; // 7 MB
 
 /**
- * Upload a product image to Supabase Storage and create a product_images row.
+ * Upload a product image to Cloudinary and create a product_images row.
  * Accepts a base64-encoded file payload because Server Actions cannot
  * receive raw FormData file entries without a multipart/form-data wrapper.
  */
@@ -50,37 +57,33 @@ export async function uploadProductImageAction(
     if (!mime || !base64) return { ok: false, error: "Invalid file payload." };
     const buffer = Buffer.from(base64, "base64");
     if (buffer.byteLength > MAX_BYTES) {
-      return { ok: false, error: "File too large. Max 8 MB." };
+      return { ok: false, error: "File too large. Max 7 MB." };
     }
     if (!ALLOWED_MIME.has(mime)) {
       return { ok: false, error: "Unsupported file type." };
     }
 
-    // Build a stable, collision-resistant path
-    const ext = mime.split("/")[1] ?? "bin";
+    // Build a collision-resistant Cloudinary public_id (also the delete identifier)
     const safeName = payload.fileName
       .toLowerCase()
       .replace(/[^a-z0-9._-]+/g, "-")
       .replace(/-+/g, "-")
       .slice(-40) || "image";
-    const path = `${productId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    const publicId = buildPublicId(productId);
 
-    // Upload to Supabase Storage
-    const { error: uploadError } = await supabaseAdmin.storage
-      .from(PRODUCT_IMAGES_BUCKET)
-      .upload(path, buffer, {
-        contentType: mime,
-        upsert: false,
-      });
-    if (uploadError) {
-      return { ok: false, error: `Upload failed: ${uploadError.message}` };
+    // Upload to Cloudinary (server-side)
+    let uploaded: { secureUrl: string; publicId: string };
+    try {
+      uploaded = await uploadImageToCloudinary({ buffer, publicId });
+    } catch (err) {
+      return {
+        ok: false,
+        error: `Upload failed: ${err instanceof Error ? err.message : "unknown error"}`,
+      };
     }
 
-    // Get the public URL
-    const { data: pub } = supabaseAdmin.storage
-      .from(PRODUCT_IMAGES_BUCKET)
-      .getPublicUrl(path);
-    const url = pub?.publicUrl ?? path;
+    // Secure, auto-optimized delivery URL
+    const url = buildDeliveryUrl(uploaded.publicId);
 
     // Determine the next display_order
     const { data: maxRow } = await db
@@ -104,7 +107,7 @@ export async function uploadProductImageAction(
       .insert({
         product_id: productId,
         image_url: url,
-        path,
+        path: uploaded.publicId,
         alt_text: safeName.replace(/\.[^.]+$/, ""),
         is_hero: isHero,
         display_order: nextOrder,
@@ -113,20 +116,24 @@ export async function uploadProductImageAction(
       .select("id")
       .single();
     if (insertError) {
-      // Roll back the storage upload so we don't leave orphans
-      await supabaseAdmin.storage.from(PRODUCT_IMAGES_BUCKET).remove([path]);
+      // Roll back the Cloudinary upload so we don't leave orphans
+      try {
+        await destroyImage(uploaded.publicId);
+      } catch {
+        // best-effort rollback
+      }
       return { ok: false, error: insertError.message };
     }
 
     await logAudit(
       auditFromSession(session, "product.image.upload", "product_images", inserted?.id ?? null, {
-        productId, path, mime, bytes: buffer.byteLength,
+        productId, path: uploaded.publicId, mime, bytes: buffer.byteLength,
       }, ip, userAgent),
     );
 
     revalidatePath(`/admin/products/${productId}`);
     revalidatePath("/admin/products");
-    return { ok: true, data: { id: String(inserted?.id), url, path } };
+    return { ok: true, data: { id: String(inserted?.id), url, path: uploaded.publicId } };
   } catch (err) {
     return {
       ok: false,
@@ -136,7 +143,7 @@ export async function uploadProductImageAction(
 }
 
 /**
- * Delete a product image (Storage object + DB row).
+ * Delete a product image (physical asset + DB row).
  */
 export async function deleteProductImageAction(
   imageId: string,
@@ -157,9 +164,13 @@ export async function deleteProductImageAction(
 
     const r = row as { id: string; product_id: string; path: string };
 
-    // Remove from Storage (best-effort; ignore 404s)
+    // Remove the physical asset from the correct provider (best-effort; ignore 404s).
     try {
-      await supabaseAdmin.storage.from(PRODUCT_IMAGES_BUCKET).remove([r.path]);
+      if (isCloudinaryPublicId(r.path)) {
+        await destroyImage(r.path);
+      } else {
+        await supabaseAdmin.storage.from(PRODUCT_IMAGES_BUCKET).remove([r.path]);
+      }
     } catch {
       // ignore
     }

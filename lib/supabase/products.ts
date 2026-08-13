@@ -108,6 +108,7 @@ type DbVariant = {
   name: string;
   price: number | null;
   stock_quantity: number;
+  is_available: boolean;
   option_values: unknown;
 };
 
@@ -132,7 +133,10 @@ type DbProduct = {
   variants?: DbVariant[] | null;
 };
 
-const money = (amount: number | null, currencyCode = DEFAULT_CURRENCY_CODE): Money | null => {
+const money = (
+  amount: number | null,
+  currencyCode = DEFAULT_CURRENCY_CODE,
+): Money | null => {
   if (amount === null) return null;
   return { amount: amount.toFixed(2), currencyCode };
 };
@@ -144,7 +148,8 @@ const parseOptionValues = (value: unknown): ProductVariantOption[] => {
       if (!v || typeof v !== "object") return null;
       const name = (v as any).name;
       const optionValue = (v as any).value;
-      if (typeof name !== "string" || typeof optionValue !== "string") return null;
+      if (typeof name !== "string" || typeof optionValue !== "string")
+        return null;
       return { name, value: optionValue } satisfies ProductVariantOption;
     })
     .filter(Boolean) as ProductVariantOption[];
@@ -152,7 +157,9 @@ const parseOptionValues = (value: unknown): ProductVariantOption[] => {
   return items;
 };
 
-const buildOptionGroups = (variants: ProductVariant[]): ProductOptionGroup[] => {
+const buildOptionGroups = (
+  variants: ProductVariant[],
+): ProductOptionGroup[] => {
   const map = new Map<string, Set<string>>();
 
   for (const variant of variants) {
@@ -170,15 +177,19 @@ const buildOptionGroups = (variants: ProductVariant[]): ProductOptionGroup[] => 
   }));
 };
 
-const toProduct = (row: DbProduct, currencyCode = DEFAULT_CURRENCY_CODE): Product => {
+const toProduct = (
+  row: DbProduct,
+  currencyCode = DEFAULT_CURRENCY_CODE,
+): Product => {
   const hasVariants = row.has_variants === true;
 
   const variants: ProductVariant[] = (row.variants ?? []).map((v) => {
     const optionValues = parseOptionValues(v.option_values);
-    const isAvailable = v.stock_quantity > 0;
+    const isAvailable = v.is_available === true && v.stock_quantity > 0;
     // For variant products, the variant price is authoritative — never fall back to product price.
     // For simple products, the variant price (if any) inherits the product price.
-    const variantPrice = money(v.price, currencyCode) ?? money(row.price, currencyCode);
+    const variantPrice =
+      money(v.price, currencyCode) ?? money(row.price, currencyCode);
     return {
       id: v.id,
       productId: row.id,
@@ -235,9 +246,13 @@ const applySorting = <T extends ReturnType<typeof supabase.from>>(
 ) => {
   switch (sort) {
     case "price_asc":
-      return query.order("price", { ascending: true }).order("created_at", { ascending: false });
+      return query
+        .order("price", { ascending: true })
+        .order("created_at", { ascending: false });
     case "price_desc":
-      return query.order("price", { ascending: false }).order("created_at", { ascending: false });
+      return query
+        .order("price", { ascending: false })
+        .order("created_at", { ascending: false });
     case "name_asc":
       return query.order("name", { ascending: true });
     case "name_desc":
@@ -257,7 +272,7 @@ const applyPagination = (query: any, pagination?: Pagination) => {
 };
 
 const baseSelect =
-  "id,category_id,name,slug,description,short_description,price,is_available,is_featured,preparation_minutes,stock_quantity,tags,created_at,updated_at,has_variants,category:categories!products_category_fk(id,name,slug,parent_id),images:product_images(id,image_url,alt_text,display_order),variants:product_variants(id,name,price,stock_quantity,option_values)";
+  "id,category_id,name,slug,description,short_description,price,is_available,is_featured,preparation_minutes,stock_quantity,tags,created_at,updated_at,has_variants,category:categories!products_category_fk(id,name,slug,parent_id),images:product_images(id,image_url,alt_text,display_order),variants:product_variants(id,name,price,stock_quantity,is_available,option_values)";
 
 export const getProducts = async (options?: {
   filters?: ProductFilters;
@@ -310,7 +325,9 @@ export const getProductsByIds = async (ids: string[]): Promise<Product[]> => {
   return (data ?? []).map((row: any) => toProduct(row as DbProduct));
 };
 
-export const getProductBySlug = async (slug: string): Promise<Product | null> => {
+export const getProductBySlug = async (
+  slug: string,
+): Promise<Product | null> => {
   const { data, error } = await supabase
     .from("products")
     .select(baseSelect)
@@ -377,7 +394,11 @@ export const searchProducts = async (
   options?: { pagination?: Pagination; sort?: ProductSort },
 ): Promise<Product[]> => {
   const q = queryText.trim();
-  if (!q) return getProducts({ pagination: options?.pagination, sort: options?.sort });
+  if (!q)
+    return getProducts({
+      pagination: options?.pagination,
+      sort: options?.sort,
+    });
 
   const pagination = options?.pagination;
   const sort = options?.sort ?? "relevance";

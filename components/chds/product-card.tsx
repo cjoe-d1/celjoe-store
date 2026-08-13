@@ -13,6 +13,7 @@ export type ProductCardModel = {
   price: { amount: string; currencyCode: string };
   isAvailable: boolean;
   preparationTimeMinutes?: number | null;
+  hasVariants?: boolean;
 };
 
 export function ProductCard({
@@ -27,7 +28,7 @@ export function ProductCard({
       href={`/product/${product.slug}`}
       className={clsx(
         "group flex h-full flex-col overflow-hidden rounded-[var(--ds-radius-xl)] border border-[var(--ds-color-border)] bg-[var(--ds-color-surface)] shadow-[var(--ds-shadow-sm)] transition-[box-shadow,transform] duration-[var(--ds-duration-base)] ease-[var(--ds-ease-decelerate)] hover:shadow-[var(--ds-shadow-md)]",
-        className
+        className,
       )}
     >
       <div className="relative aspect-square w-full overflow-hidden bg-[var(--ds-color-surface-muted)]">
@@ -56,7 +57,24 @@ export function ProductCard({
           )}
         </div>
         <div className="mt-auto pt-[var(--ds-space-4)] flex items-center justify-between">
-          <PriceDisplay amount={product.price.amount} currencyCode={product.price.currencyCode} />
+          <span className="flex flex-col items-start gap-[var(--ds-space-1)]">
+            {product.hasVariants && (
+              <span className="text-[length:var(--ds-text-caption)] text-[var(--ds-color-muted)]">
+                Multiple options
+              </span>
+            )}
+            <span>
+              {product.hasVariants && (
+                <span className="text-[length:var(--ds-text-caption)] text-[var(--ds-color-muted)] font-[var(--ds-font-weight-normal)]">
+                  From{" "}
+                </span>
+              )}
+              <PriceDisplay
+                amount={product.price.amount}
+                currencyCode={product.price.currencyCode}
+              />
+            </span>
+          </span>
           {product.preparationTimeMinutes ? (
             <PreparationTime minutes={product.preparationTimeMinutes} />
           ) : null}

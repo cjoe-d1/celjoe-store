@@ -44,6 +44,12 @@ export const env = {
     vapidPublicKey: getOptional("NEXT_PUBLIC_VAPID_PUBLIC_KEY") ?? "",
     vapidSubject: getOptional("VAPID_SUBJECT") ?? "mailto:admin@celjoe.com",
   },
+  /** Cloudinary product-image storage (server-only; never prefixed NEXT_PUBLIC_). */
+  cloudinary: {
+    cloudName: getOptional("CLOUDINARY_CLOUD_NAME") ?? "",
+    apiKey: getOptional("CLOUDINARY_API_KEY") ?? "",
+    apiSecret: getOptional("CLOUDINARY_API_SECRET") ?? "",
+  },
 } as const;
 
 export const requireEnv = {
@@ -52,4 +58,7 @@ export const requireEnv = {
     getRequiredAny(["NEXT_PUBLIC_SUPABASE_ANON_KEY", "SUPABASE_ANON_KEY"]),
   supabaseServiceRoleKey: () =>
     getRequiredAny(["SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_SERVICE_KEY"]),
+  cloudinaryCloudName: () => getRequiredAny(["CLOUDINARY_CLOUD_NAME"]),
+  cloudinaryApiKey: () => getRequiredAny(["CLOUDINARY_API_KEY"]),
+  cloudinaryApiSecret: () => getRequiredAny(["CLOUDINARY_API_SECRET"]),
 };

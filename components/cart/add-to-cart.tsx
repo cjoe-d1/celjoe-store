@@ -4,30 +4,30 @@ import { addItem } from "components/cart/actions";
 import { useAddToBasket } from "components/cart/add-to-basket-provider";
 import { AddToBasketButton } from "components/cart/add-to-basket-button";
 import { useCart } from "components/cart/cart-context";
-import type { Product, ProductVariant } from "lib/supabase/products";
+import type { Product } from "lib/supabase/products";
 import { useSearchParams } from "next/navigation";
 import { useActionState, useCallback } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 
 export function AddToCart({ product }: { product: Product }) {
-  const { variants, isAvailable } = product;
+  const { variants } = product;
   const { addCartItem } = useCart();
   const { triggerFly } = useAddToBasket();
   const searchParams = useSearchParams();
   const [message, formAction] = useActionState(addItem, null);
 
-  const variant = variants.find((variant: ProductVariant) =>
-    variant.optionValues.every(
-      (option) => option.value === searchParams.get(option.name.toLowerCase()),
-    ),
-  );
-  const defaultVariantId = variants.length === 1 ? variants[0]?.id : undefined;
-  const selectedVariantId = variant?.id || defaultVariantId;
+  // Variant products require an explicit selection; never default to variants[0].
+  // Simple products have exactly one system "Default" variant.
+  const selectedVariantId = product.hasVariants
+    ? (searchParams.get("variant") ?? undefined)
+    : variants[0]?.id;
+
+  const finalVariant = variants.find((v) => v.id === selectedVariantId);
   const addItemAction = formAction.bind(null, selectedVariantId);
-  const finalVariant = variants.find(
-    (variant) => variant.id === selectedVariantId,
-  )!;
+  const availableForSale = product.hasVariants
+    ? (finalVariant?.isAvailable ?? false)
+    : product.isAvailable;
 
   const productImage = product.images?.[0]?.url ?? null;
 
@@ -97,7 +97,7 @@ export function AddToCart({ product }: { product: Product }) {
   return (
     <form action={addItemAction}>
       <AddToBasketButton
-        availableForSale={isAvailable && (finalVariant?.isAvailable ?? true)}
+        availableForSale={availableForSale}
         selectedVariantId={selectedVariantId}
         onActivate={handleCommerceMutation}
         onComplete={handleAnimationComplete}

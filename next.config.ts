@@ -1,9 +1,12 @@
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || "";
 const supabaseHostname = supabaseUrl ? (() => { try { return new URL(supabaseUrl).hostname; } catch { return ""; } })() : "";
 
-const remotePatterns: Array<{ protocol: "https"; hostname: string; pathname: string }> = supabaseHostname
-  ? [{ protocol: "https", hostname: supabaseHostname, pathname: "/**" }]
-  : [];
+const remotePatterns: Array<{ protocol: "https"; hostname: string; pathname: string }> = [
+  { protocol: "https", hostname: "res.cloudinary.com", pathname: "/**" },
+  ...(supabaseHostname
+    ? [{ protocol: "https" as const, hostname: supabaseHostname, pathname: "/**" }]
+    : []),
+];
 
 export default {
   turbopack: {
@@ -13,6 +16,10 @@ export default {
     ppr: true,
     inlineCss: true,
     useCache: true,
+    serverActions: {
+      // 7 MB binary → ~9.33 MB base64; headroom covers the data-URL + JSON wrapper.
+      bodySizeLimit: "12mb",
+    },
     optimizePackageImports: [
       "@headlessui/react",
       "@supabase/ssr",
@@ -28,7 +35,7 @@ export default {
   compress: true,
   /** Security headers applied to ALL responses. */
   async headers() {
-    return [
+    const headers = [
       {
         source: "/:path*",
         headers: [
@@ -42,7 +49,14 @@ export default {
           },
         ],
       },
-      {
+    ];
+
+    // Immutable caching is only safe in production, where static asset names
+    // are content-hashed. In dev, chunk names are stable while their contents
+    // change on config/code edits, so long-lived immutable caching would pin
+    // stale client bundles (e.g. next/image remotePatterns) indefinitely.
+    if (process.env.NODE_ENV === "production") {
+      headers.push({
         source: "/_next/static/:path*",
         headers: [
           {
@@ -50,7 +64,9 @@ export default {
             value: "public, max-age=31536000, immutable",
           },
         ],
-      },
-    ];
+      });
+    }
+
+    return headers;
   },
 };

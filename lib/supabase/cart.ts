@@ -48,7 +48,10 @@ export type Cart = {
 const DEFAULT_CURRENCY_CODE: CurrencyCode = CURRENCY_CODE;
 const CART_TOKEN_COOKIE = "cartToken";
 
-const money = (amount: number, currencyCode = DEFAULT_CURRENCY_CODE): Money => ({
+const money = (
+  amount: number,
+  currencyCode = DEFAULT_CURRENCY_CODE,
+): Money => ({
   amount: amount.toFixed(2),
   currencyCode,
 });
@@ -60,7 +63,8 @@ const parseOptionValues = (value: unknown): CartItemOption[] => {
       if (!v || typeof v !== "object") return null;
       const name = (v as any).name;
       const optionValue = (v as any).value;
-      if (typeof name !== "string" || typeof optionValue !== "string") return null;
+      if (typeof name !== "string" || typeof optionValue !== "string")
+        return null;
       return { name, value: optionValue } satisfies CartItemOption;
     })
     .filter(Boolean) as CartItemOption[];
@@ -204,6 +208,26 @@ export const addCartItem = async (
 
   const cartId = cartRow.id as string;
 
+  // Authoritative variant lookup — the browser only supplies the variant id.
+  // Availability, stock and product_id are resolved from the database. Price is
+  // never client-supplied: the cart reads it from product_variants at display time.
+  const { data: variantRow, error: variantError } = await supabase
+    .from("product_variants")
+    .select("id, product_id, stock_quantity, is_available")
+    .eq("id", variantId)
+    .limit(1)
+    .maybeSingle();
+
+  if (variantError) throw variantError;
+  if (!variantRow) throw new Error("Variant not found");
+  if (variantRow.is_available !== true)
+    throw new Error("Variant is unavailable");
+  if ((variantRow.stock_quantity ?? 0) <= 0)
+    throw new Error("Variant is out of stock");
+  if (quantity > (variantRow.stock_quantity ?? 0)) {
+    throw new Error("Requested quantity exceeds available stock");
+  }
+
   const { data: existing, error: existingError } = await supabase
     .from("cart_items")
     .select("id, quantity")
@@ -216,6 +240,9 @@ export const addCartItem = async (
 
   if (existing) {
     const newQuantity = (existing.quantity as number) + quantity;
+    if (newQuantity > (variantRow.stock_quantity ?? 0)) {
+      throw new Error("Requested quantity exceeds available stock");
+    }
     const { error: updateError } = await supabase
       .from("cart_items")
       .update({ quantity: newQuantity })
@@ -224,16 +251,6 @@ export const addCartItem = async (
     if (updateError) throw updateError;
     return;
   }
-
-  const { data: variantRow, error: variantError } = await supabase
-    .from("product_variants")
-    .select("id, product_id")
-    .eq("id", variantId)
-    .limit(1)
-    .maybeSingle();
-
-  if (variantError) throw variantError;
-  if (!variantRow) throw new Error("Variant not found");
 
   const { error: insertError } = await supabase.from("cart_items").insert({
     cart_id: cartId,
@@ -293,6 +310,22 @@ export const updateCartItemQuantity = async (
 
   if (cartError) throw cartError;
   if (!cartRow) return;
+
+  // Authoritative stock/availability check before allowing a quantity change.
+  const { data: variantRow, error: variantError } = await supabase
+    .from("product_variants")
+    .select("id, stock_quantity, is_available")
+    .eq("id", variantId)
+    .limit(1)
+    .maybeSingle();
+
+  if (variantError) throw variantError;
+  if (!variantRow) throw new Error("Variant not found");
+  if (variantRow.is_available !== true)
+    throw new Error("Variant is unavailable");
+  if (quantity > (variantRow.stock_quantity ?? 0)) {
+    throw new Error("Requested quantity exceeds available stock");
+  }
 
   const { data: existing, error: existingError } = await supabase
     .from("cart_items")

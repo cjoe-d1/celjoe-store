@@ -104,16 +104,25 @@ export function VariantsEditor({ productId, initialVariants }: Props) {
             name="name"
             defaultValue={variant.name}
             placeholder="Size / Option"
+            aria-label="Variant name"
             className="min-w-0"
           />
-          <TextInput
-            name="price"
-            type="number"
-            step="0.01"
-            min="0"
-            defaultValue={variant.price}
-            placeholder="0.00"
-          />
+          <div className="relative min-w-0">
+            <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-[length:var(--ds-text-caption)] text-[var(--ds-color-muted)]">
+              ₦
+            </span>
+            <TextInput
+              name="price"
+              type="number"
+              step="0.01"
+              min="0"
+              defaultValue={variant.price}
+              placeholder="0.00"
+              aria-label="Variant price"
+              style={{ paddingLeft: "1.75rem" }}
+              className="min-w-0"
+            />
+          </div>
           <TextInput
             name="stock_quantity"
             type="number"
@@ -121,6 +130,7 @@ export function VariantsEditor({ productId, initialVariants }: Props) {
             step="1"
             defaultValue={variant.stockQuantity}
             placeholder="0"
+            aria-label="Stock quantity"
           />
           <label className="flex cursor-pointer items-center gap-[var(--ds-space-1)] select-none text-[length:var(--ds-text-caption)] text-[var(--ds-color-fg)]">
             <input
@@ -132,7 +142,12 @@ export function VariantsEditor({ productId, initialVariants }: Props) {
             Available
           </label>
           <div className="flex gap-[var(--ds-space-1)]">
-            <Button type="submit" variant="primary" size="sm" disabled={pending}>
+            <Button
+              type="submit"
+              variant="primary"
+              size="sm"
+              disabled={pending}
+            >
               {pending ? "…" : "Save"}
             </Button>
             <Button
@@ -142,7 +157,10 @@ export function VariantsEditor({ productId, initialVariants }: Props) {
               onClick={() => {
                 setEditingId(null);
                 setIsAdding(false);
-                if (isNew) setVariants((prev) => prev.filter((v) => v.id !== variant.id));
+                if (isNew)
+                  setVariants((prev) =>
+                    prev.filter((v) => v.id !== variant.id),
+                  );
               }}
             >
               Cancel
@@ -166,7 +184,9 @@ export function VariantsEditor({ productId, initialVariants }: Props) {
         </span>
         <span
           className={`text-[length:var(--ds-text-body)] font-[var(--ds-font-weight-medium)] ${
-            stockZero ? "text-[var(--ds-color-danger)]" : "text-[var(--ds-color-fg)]"
+            stockZero
+              ? "text-[var(--ds-color-danger)]"
+              : "text-[var(--ds-color-fg)]"
           }`}
         >
           {variant.stockQuantity}

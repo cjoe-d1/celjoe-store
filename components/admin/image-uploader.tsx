@@ -387,7 +387,7 @@ export const ImageUploader = forwardRef<ImageUploaderHandle, Props>(
               Drag &amp; drop images here, or click to browse
             </p>
             <p className="text-[length:var(--ds-text-caption)] text-[var(--ds-color-muted)]">
-              JPG, PNG, WEBP, GIF — max 8 MB each — up to {MAX_FILES} images
+              JPG, PNG, WEBP, GIF — max 7 MB each — up to {MAX_FILES} images
             </p>
           </div>
         </div>
